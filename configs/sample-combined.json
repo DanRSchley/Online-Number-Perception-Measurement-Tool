@@ -1,0 +1,161 @@
+{
+  "experiment": {
+    "title": "Combined Numerosity and Proportion Session",
+    "instructionsTitle": "Behavioral Judgment Session",
+    "instructionsText": [
+      "This session may contain both dot estimation and proportion judgment tasks.",
+      "Follow the instructions on each screen and answer every trial."
+    ],
+    "endText": "The session is complete. If Qualtrics is collecting data, you may now continue in the survey."
+  },
+  "export": {
+    "filePrefix": "combined-session"
+  },
+  "blocks": [
+    {
+      "name": "Numerosity Practice",
+      "taskFamily": "numerosity",
+      "practice": true,
+      "trialSource": "practiceTrialSets",
+      "condition": "joint_brief",
+      "order": 1,
+      "instructionsTitle": "Dot Practice",
+      "instructionsText": [
+        "You will first complete a short dot-estimation practice block."
+      ]
+    },
+    {
+      "name": "Numerosity Main",
+      "taskFamily": "numerosity",
+      "practice": false,
+      "trialSource": "trialSets",
+      "condition": "joint_brief",
+      "order": 2
+    },
+    {
+      "name": "Proportion Practice",
+      "taskFamily": "proportion",
+      "practice": true,
+      "format": "joint",
+      "responseMethod": "numeric",
+      "maxTrials": 3,
+      "order": 3,
+      "instructionsTitle": "Proportion Practice",
+      "instructionsText": [
+        "Next you will estimate percentages in a bar chart using open-ended numbers."
+      ]
+    },
+    {
+      "name": "Proportion Main",
+      "taskFamily": "proportion",
+      "practice": false,
+      "format": "separate",
+      "responseMethod": "numeric",
+      "maxTrials": 8,
+      "order": 4
+    }
+  ],
+  "taskSettings": {
+    "numerosity": {
+      "practiceTrialSets": [
+        {
+          "trialSetId": "P001",
+          "arrays": [
+            { "label": "A", "numerosity": 12, "setType": 1, "seed": 1101 },
+            { "label": "B", "numerosity": 20, "setType": 2, "seed": 1102 },
+            { "label": "C", "numerosity": 38, "setType": 3, "seed": 1103 },
+            { "label": "D", "numerosity": 56, "setType": 1, "seed": 1104 }
+          ]
+        },
+        {
+          "trialSetId": "P002",
+          "arrays": [
+            { "label": "A", "numerosity": 18, "setType": 2, "seed": 1201 },
+            { "label": "B", "numerosity": 27, "setType": 1, "seed": 1202 },
+            { "label": "C", "numerosity": 44, "setType": 3, "seed": 1203 },
+            { "label": "D", "numerosity": 72, "setType": 2, "seed": 1204 }
+          ]
+        }
+      ],
+      "trialSets": [
+        {
+          "trialSetId": "TS001",
+          "arrays": [
+            { "label": "A", "numerosity": 12, "setType": 1, "seed": 1001 },
+            { "label": "B", "numerosity": 25, "setType": 2, "seed": 1002 },
+            { "label": "C", "numerosity": 50, "setType": 3, "seed": 1003 },
+            { "label": "D", "numerosity": 90, "setType": 1, "seed": 1004 }
+          ]
+        },
+        {
+          "trialSetId": "TS002",
+          "arrays": [
+            { "label": "A", "numerosity": 14, "setType": 2, "seed": 2001 },
+            { "label": "B", "numerosity": 30, "setType": 1, "seed": 2002 },
+            { "label": "C", "numerosity": 62, "setType": 3, "seed": 2003 },
+            { "label": "D", "numerosity": 85, "setType": 2, "seed": 2004 }
+          ]
+        },
+        {
+          "trialSetId": "TS003",
+          "arrays": [
+            { "label": "A", "numerosity": 10, "setType": 1, "seed": 3001 },
+            { "label": "B", "numerosity": 24, "setType": 3, "seed": 3002 },
+            { "label": "C", "numerosity": 41, "setType": 2, "seed": 3003 },
+            { "label": "D", "numerosity": 76, "setType": 1, "seed": 3004 }
+          ]
+        }
+      ]
+    },
+    "proportion": {
+      "responseMethod": "numeric",
+      "trialList": [
+        {
+          "trial_id": "PJ001",
+          "stimulus_id": "BAR001",
+          "format": "joint",
+          "target_label": "C",
+          "A": 0.1,
+          "B": 0.15,
+          "C": 0.25,
+          "D": 0.2,
+          "E": 0.3
+        },
+        {
+          "trial_id": "PJ002",
+          "stimulus_id": "BAR002",
+          "format": "joint",
+          "target_label": "A",
+          "A": 0.08,
+          "B": 0.2,
+          "C": 0.24,
+          "D": 0.18,
+          "E": 0.3
+        },
+        {
+          "trial_id": "PJ003",
+          "stimulus_id": "BAR003",
+          "format": "separate",
+          "target_label": "E",
+          "A": 0.14,
+          "B": 0.16,
+          "C": 0.2,
+          "D": 0.22,
+          "E": 0.28
+        }
+      ],
+      "proceduralGenerator": {
+        "seed": 9090,
+        "formats": ["joint", "separate"],
+        "trialsPerBin": 1,
+        "minChunk": 0.06,
+        "maxChunk": 0.45,
+        "targetBins": [
+          [0.08, 0.16],
+          [0.18, 0.3],
+          [0.32, 0.44]
+        ]
+      }
+    }
+  }
+}

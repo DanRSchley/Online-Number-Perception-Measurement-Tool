@@ -1,0 +1,74 @@
+{
+  "experiment": {
+    "title": "Proportion Judgment Task",
+    "instructionsTitle": "Proportion Judgment Task",
+    "instructionsText": [
+      "Preview configuration: separate evaluation for the proportion task.",
+      "Enter one open-ended percentage for the shaded portion of the bar."
+    ]
+  },
+  "export": {
+    "filePrefix": "proportion-separate-only"
+  },
+  "blocks": [
+    {
+      "name": "Separate Practice",
+      "taskFamily": "proportion",
+      "practice": true,
+      "format": "separate",
+      "responseMethod": "numeric",
+      "maxTrials": 3,
+      "order": 1
+    },
+    {
+      "name": "Separate Main",
+      "taskFamily": "proportion",
+      "practice": false,
+      "format": "separate",
+      "responseMethod": "numeric",
+      "maxTrials": 8,
+      "order": 2
+    }
+  ],
+  "taskSettings": {
+    "proportion": {
+      "responseMethod": "numeric",
+      "trialList": [
+        {
+          "trial_id": "PT003",
+          "stimulus_id": "BAR003",
+          "format": "separate",
+          "target_label": "A",
+          "A": 0.09,
+          "B": 0.21,
+          "C": 0.24,
+          "D": 0.16,
+          "E": 0.3
+        },
+        {
+          "trial_id": "PT004",
+          "stimulus_id": "BAR004",
+          "format": "separate",
+          "target_label": "D",
+          "A": 0.15,
+          "B": 0.18,
+          "C": 0.14,
+          "D": 0.23,
+          "E": 0.3
+        }
+      ],
+      "proceduralGenerator": {
+        "seed": 5555,
+        "formats": ["separate"],
+        "trialsPerBin": 1,
+        "minChunk": 0.06,
+        "maxChunk": 0.44,
+        "targetBins": [
+          [0.08, 0.14],
+          [0.18, 0.28],
+          [0.32, 0.42]
+        ]
+      }
+    }
+  }
+}

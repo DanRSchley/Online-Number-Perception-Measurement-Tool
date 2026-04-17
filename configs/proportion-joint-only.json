@@ -1,0 +1,74 @@
+{
+  "experiment": {
+    "title": "Proportion Judgment Task",
+    "instructionsTitle": "Proportion Judgment Task",
+    "instructionsText": [
+      "Preview configuration: joint evaluation for the proportion task.",
+      "Enter open-ended percentages for all five labeled blocks."
+    ]
+  },
+  "export": {
+    "filePrefix": "proportion-joint-only"
+  },
+  "blocks": [
+    {
+      "name": "Joint Practice",
+      "taskFamily": "proportion",
+      "practice": true,
+      "format": "joint",
+      "responseMethod": "numeric",
+      "maxTrials": 3,
+      "order": 1
+    },
+    {
+      "name": "Joint Main",
+      "taskFamily": "proportion",
+      "practice": false,
+      "format": "joint",
+      "responseMethod": "numeric",
+      "maxTrials": 8,
+      "order": 2
+    }
+  ],
+  "taskSettings": {
+    "proportion": {
+      "responseMethod": "numeric",
+      "trialList": [
+        {
+          "trial_id": "PT001",
+          "stimulus_id": "BAR001",
+          "format": "joint",
+          "target_label": "B",
+          "A": 0.1,
+          "B": 0.15,
+          "C": 0.25,
+          "D": 0.2,
+          "E": 0.3
+        },
+        {
+          "trial_id": "PT002",
+          "stimulus_id": "BAR002",
+          "format": "joint",
+          "target_label": "D",
+          "A": 0.12,
+          "B": 0.17,
+          "C": 0.19,
+          "D": 0.22,
+          "E": 0.3
+        }
+      ],
+      "proceduralGenerator": {
+        "seed": 5555,
+        "formats": ["joint"],
+        "trialsPerBin": 1,
+        "minChunk": 0.06,
+        "maxChunk": 0.44,
+        "targetBins": [
+          [0.08, 0.14],
+          [0.18, 0.28],
+          [0.32, 0.42]
+        ]
+      }
+    }
+  }
+}

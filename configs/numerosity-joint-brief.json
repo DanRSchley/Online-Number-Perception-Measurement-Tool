@@ -1,0 +1,75 @@
+{
+  "experiment": {
+    "title": "Numerosity Task",
+    "instructionsTitle": "Dot Estimation Task",
+    "instructionsText": [
+      "Preview configuration: joint evaluation with brief removed presentation.",
+      "You will see four arrays together, the display will disappear, and then you will answer."
+    ]
+  },
+  "export": {
+    "filePrefix": "numerosity-joint-brief"
+  },
+  "blocks": [
+    {
+      "name": "Practice",
+      "taskFamily": "numerosity",
+      "practice": true,
+      "trialSource": "practiceTrialSets",
+      "condition": "joint_brief",
+      "order": 1
+    },
+    {
+      "name": "Main",
+      "taskFamily": "numerosity",
+      "practice": false,
+      "trialSource": "trialSets",
+      "condition": "joint_brief",
+      "order": 2
+    }
+  ],
+  "taskSettings": {
+    "numerosity": {
+      "practiceTrialSets": [
+        {
+          "trialSetId": "P001",
+          "arrays": [
+            { "label": "A", "numerosity": 8, "setType": 1, "seed": 901 },
+            { "label": "B", "numerosity": 16, "setType": 2, "seed": 902 },
+            { "label": "C", "numerosity": 28, "setType": 3, "seed": 903 },
+            { "label": "D", "numerosity": 42, "setType": 1, "seed": 904 }
+          ]
+        },
+        {
+          "trialSetId": "P002",
+          "arrays": [
+            { "label": "A", "numerosity": 11, "setType": 2, "seed": 905 },
+            { "label": "B", "numerosity": 21, "setType": 1, "seed": 906 },
+            { "label": "C", "numerosity": 35, "setType": 3, "seed": 907 },
+            { "label": "D", "numerosity": 54, "setType": 2, "seed": 908 }
+          ]
+        }
+      ],
+      "trialSets": [
+        {
+          "trialSetId": "N001",
+          "arrays": [
+            { "label": "A", "numerosity": 12, "setType": 1, "seed": 1001 },
+            { "label": "B", "numerosity": 25, "setType": 2, "seed": 1002 },
+            { "label": "C", "numerosity": 50, "setType": 3, "seed": 1003 },
+            { "label": "D", "numerosity": 90, "setType": 1, "seed": 1004 }
+          ]
+        },
+        {
+          "trialSetId": "N002",
+          "arrays": [
+            { "label": "A", "numerosity": 15, "setType": 2, "seed": 1011 },
+            { "label": "B", "numerosity": 31, "setType": 1, "seed": 1012 },
+            { "label": "C", "numerosity": 48, "setType": 3, "seed": 1013 },
+            { "label": "D", "numerosity": 83, "setType": 2, "seed": 1014 }
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,35 @@
+[
+  {
+    "trial_id": "TRIAL001",
+    "stimulus_id": "STIM001",
+    "format": "joint",
+    "target_label": "A",
+    "A": 0.1,
+    "B": 0.15,
+    "C": 0.25,
+    "D": 0.2,
+    "E": 0.3
+  },
+  {
+    "trial_id": "TRIAL002",
+    "stimulus_id": "STIM002",
+    "format": "joint",
+    "target_label": "C",
+    "A": 0.12,
+    "B": 0.18,
+    "C": 0.22,
+    "D": 0.18,
+    "E": 0.3
+  },
+  {
+    "trial_id": "TRIAL003",
+    "stimulus_id": "STIM003",
+    "format": "separate",
+    "target_label": "E",
+    "A": 0.14,
+    "B": 0.16,
+    "C": 0.18,
+    "D": 0.22,
+    "E": 0.3
+  }
+]
