@@ -112,6 +112,7 @@ At the end of the session the app can:
 - auto-download CSV
 - auto-download JSON
 - write serialized rows and metadata into Qualtrics embedded data fields
+- suppress local downloads automatically when running inside Qualtrics
 
 Numerosity exports one row per array judgment. Joint numerosity trials still become four rows so they match separate conditions cleanly.
 
@@ -120,17 +121,29 @@ Proportion exports one row per trial with the target chunk metadata and normaliz
 ## Qualtrics use
 
 1. Host `index.html`, `app.js`, `styles.css`, and your config JSON somewhere Qualtrics can reach.
-2. Create embedded data fields in Qualtrics for participant ID, condition assignment, and saved results.
+2. Create embedded data fields in Qualtrics for participant ID, task assignment, and saved results.
 3. Use the example in `qualtrics/qualtrics-snippet.js` as a starting point.
-4. Pass condition assignment from Qualtrics for numerosity and block/session assignment as needed.
+4. Pass the desired task with one embedded-data value such as `task = numerosity_separate_brief` or `task = proportion_joint_evaluation`.
 
 The adapter writes to:
 
-- `experiment_data`
-- `experiment_metadata`
+- `experiment_data_json`
+- `experiment_metadata_json`
 - `experiment_complete`
 
 These names are configurable in the JSON config.
+
+Supported task keys for Survey Flow:
+
+- `combined_session`
+- `numerosity_only`
+- `numerosity_separate_brief`
+- `numerosity_separate_visible`
+- `numerosity_joint_brief`
+- `numerosity_joint_visible`
+- `proportion_only`
+- `proportion_joint_evaluation`
+- `proportion_separate_evaluation`
 
 ## Current scope
 

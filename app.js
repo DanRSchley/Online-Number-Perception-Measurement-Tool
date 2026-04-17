@@ -38,6 +38,7 @@
     },
     export: {
       autoDownload: true,
+      disableAutoDownloadInQualtrics: true,
       downloadCsv: true,
       downloadJson: true,
       filePrefix: "behavioral-experiment"
@@ -108,6 +109,18 @@
     "joint_visible"
   ];
 
+  const TASK_CONFIG_MAP = {
+    combined_session: "./configs/sample-combined.json",
+    numerosity_only: "./configs/numerosity-only.json",
+    numerosity_separate_brief: "./configs/numerosity-separate-brief.json",
+    numerosity_separate_visible: "./configs/numerosity-separate-visible.json",
+    numerosity_joint_brief: "./configs/numerosity-joint-brief.json",
+    numerosity_joint_visible: "./configs/numerosity-joint-visible.json",
+    proportion_only: "./configs/proportion-only.json",
+    proportion_joint_evaluation: "./configs/proportion-joint-only.json",
+    proportion_separate_evaluation: "./configs/proportion-separate-only.json"
+  };
+
   function deepClone(value) {
     return JSON.parse(JSON.stringify(value));
   }
@@ -142,6 +155,13 @@
     } catch (error) {
       return fallback;
     }
+  }
+
+  function resolveTaskConfig(taskKey) {
+    if (!taskKey) {
+      return null;
+    }
+    return TASK_CONFIG_MAP[String(taskKey).trim()] || null;
   }
 
   function createSeededRng(seed) {
@@ -2015,6 +2035,7 @@
     finish() {
       const rows = this.logger.getRows();
       const metadata = this.logger.getMetadata();
+      const runningInQualtrics = this.config.qualtrics.enabled && this.qualtricsAdapter.isAvailable();
       if (this.config.qualtrics.enabled) {
         this.qualtricsAdapter.writeResults(rows, metadata);
       }
@@ -2031,13 +2052,16 @@
           );
         }
       };
-      if (this.config.export.autoDownload) {
+      const shouldAutoDownload =
+        this.config.export.autoDownload &&
+        !(runningInQualtrics && this.config.export.disableAutoDownloadInQualtrics !== false);
+      if (shouldAutoDownload) {
         doDownload();
       }
       this.screenManager.showEndScreen(
         this.config.experiment.endTitle,
         this.config.experiment.endText,
-        doDownload
+        runningInQualtrics ? null : doDownload
       );
     }
   }
@@ -2073,7 +2097,21 @@
     const query = parseQueryParams();
     const inlineConfig = window.__BEHAVIORAL_EXPERIMENT_CONFIG || null;
     const queryConfig = query.configInline ? parseJsonSafe(query.configInline, null) : null;
-    const sourceConfig = config || queryConfig || inlineConfig || query.config || "./configs/sample-combined.json";
+    const assignments =
+      embeddedAssignments ||
+      window.__BEHAVIORAL_EXPERIMENT_ASSIGNMENTS ||
+      {
+        participantId: query.participantId,
+        sessionId: query.sessionId,
+        condition: query.condition,
+        counterbalancingAssignment: query.counterbalancingAssignment,
+        task: query.task
+      };
+    const taskConfig =
+      resolveTaskConfig(assignments.task) ||
+      resolveTaskConfig(query.task) ||
+      null;
+    const sourceConfig = config || queryConfig || inlineConfig || query.config || taskConfig || "./configs/sample-combined.json";
     const loadedConfig = await loadConfigFromSource(sourceConfig);
     const controller = new ExperimentController({
       mountEl: root,
@@ -2081,15 +2119,7 @@
       sessionId,
       config: loadedConfig,
       qualtricsAdapter,
-      embeddedAssignments:
-        embeddedAssignments ||
-        window.__BEHAVIORAL_EXPERIMENT_ASSIGNMENTS ||
-        {
-          participantId: query.participantId,
-          sessionId: query.sessionId,
-          condition: query.condition,
-          counterbalancingAssignment: query.counterbalancingAssignment
-        }
+      embeddedAssignments: assignments
     });
     await controller.run();
     return controller;
