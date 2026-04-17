@@ -102,6 +102,12 @@
     }
   };
 
+  const HOSTED_BASE_URL = "https://danrschley.github.io/Online-Number-Perception-Measurement-Tool/";
+
+  function hostedPath(path) {
+    return new URL(path, HOSTED_BASE_URL).toString();
+  }
+
   const NUMEROSITY_CONDITIONS = [
     "separate_brief",
     "separate_visible",
@@ -110,15 +116,15 @@
   ];
 
   const TASK_CONFIG_MAP = {
-    combined_session: "./configs/sample-combined.json",
-    numerosity_only: "./configs/numerosity-only.json",
-    numerosity_separate_brief: "./configs/numerosity-separate-brief.json",
-    numerosity_separate_visible: "./configs/numerosity-separate-visible.json",
-    numerosity_joint_brief: "./configs/numerosity-joint-brief.json",
-    numerosity_joint_visible: "./configs/numerosity-joint-visible.json",
-    proportion_only: "./configs/proportion-only.json",
-    proportion_joint_evaluation: "./configs/proportion-joint-only.json",
-    proportion_separate_evaluation: "./configs/proportion-separate-only.json"
+    combined_session: hostedPath("configs/sample-combined.json"),
+    numerosity_only: hostedPath("configs/numerosity-only.json"),
+    numerosity_separate_brief: hostedPath("configs/numerosity-separate-brief.json"),
+    numerosity_separate_visible: hostedPath("configs/numerosity-separate-visible.json"),
+    numerosity_joint_brief: hostedPath("configs/numerosity-joint-brief.json"),
+    numerosity_joint_visible: hostedPath("configs/numerosity-joint-visible.json"),
+    proportion_only: hostedPath("configs/proportion-only.json"),
+    proportion_joint_evaluation: hostedPath("configs/proportion-joint-only.json"),
+    proportion_separate_evaluation: hostedPath("configs/proportion-separate-only.json")
   };
 
   function deepClone(value) {
@@ -2111,7 +2117,13 @@
       resolveTaskConfig(assignments.task) ||
       resolveTaskConfig(query.task) ||
       null;
-    const sourceConfig = config || queryConfig || inlineConfig || query.config || taskConfig || "./configs/sample-combined.json";
+    const sourceConfig =
+      config ||
+      queryConfig ||
+      inlineConfig ||
+      query.config ||
+      taskConfig ||
+      hostedPath("configs/sample-combined.json");
     const loadedConfig = await loadConfigFromSource(sourceConfig);
     const controller = new ExperimentController({
       mountEl: root,
