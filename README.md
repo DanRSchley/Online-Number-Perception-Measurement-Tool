@@ -124,6 +124,9 @@ Proportion exports one row per trial with the target chunk metadata and normaliz
 2. Create embedded data fields in Qualtrics for participant ID, task assignment, and saved results.
 3. Use the example in `qualtrics/qualtrics-snippet.js` as a starting point.
 4. Pass the desired task with one embedded-data value such as `task = numerosity_separate_brief` or `task = proportion_joint_evaluation`.
+5. In Qualtrics, the app now suppresses the participant-ID entry screen and uses the Qualtrics session/response identifier automatically when no explicit `participant_id` field is supplied.
+6. For the Qualtrics question HTML, use only `<div id="behavioral-experiment-root"></div>` so the task can take over the full question container cleanly.
+7. If you update `app.js` and Qualtrics still appears to use an older version, add a temporary query suffix to the script URL in the survey question, such as `app.js?v=20260417c`, then hard refresh the preview with `Ctrl+F5`.
 
 The adapter writes to:
 

@@ -40,6 +40,10 @@ body {
   min-height: 100vh;
 }
 
+.behavioral-experiment-root {
+  width: 100%;
+}
+
 .screen {
   min-height: 100vh;
   width: 100%;
@@ -308,6 +312,96 @@ input[type="range"] {
 
 .fullscreen-note {
   color: var(--muted);
+}
+
+.qualtrics-embed {
+  width: 100%;
+}
+
+.qualtrics-embed .screen {
+  min-height: auto;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 20px 12px 28px;
+}
+
+.qualtrics-embed .screen--stack {
+  gap: 16px;
+}
+
+.qualtrics-embed .panel {
+  width: min(1200px, 100%);
+  margin: 0 auto;
+  padding: 28px 32px;
+}
+
+.qualtrics-embed .panel h1,
+.qualtrics-embed .panel h2 {
+  font-size: clamp(2rem, 2.4vw, 2.8rem);
+}
+
+.qualtrics-embed .panel p,
+.qualtrics-embed .panel li {
+  font-size: 1.05rem;
+  line-height: 1.45;
+}
+
+.qualtrics-embed .message {
+  font-size: clamp(1.45rem, 2vw, 2.25rem);
+}
+
+.qualtrics-embed .canvas-stage,
+.qualtrics-embed .bar-stage {
+  gap: 18px;
+}
+
+.qualtrics-embed .stimulus-canvas {
+  width: min(1080px, 94vw);
+  height: min(620px, 58vh);
+}
+
+.qualtrics-embed .bar-heading {
+  width: min(1080px, 94vw);
+}
+
+.qualtrics-embed .bar-heading h2 {
+  font-size: clamp(1.85rem, 2.4vw, 2.5rem);
+  margin-bottom: 6px;
+}
+
+.qualtrics-embed .bar-heading p {
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.qualtrics-embed .bar-svg {
+  width: min(1080px, 94vw);
+  height: min(340px, 34vh);
+}
+
+.qualtrics-embed .response-panel {
+  width: min(980px, 94vw);
+  gap: 18px;
+}
+
+.qualtrics-embed .percentage-grid,
+.qualtrics-embed .percentage-total-wrap {
+  width: min(820px, 94vw);
+}
+
+.qualtrics-embed .percentage-row label,
+.qualtrics-embed .percentage-total-label {
+  font-size: 1.15rem;
+}
+
+.qualtrics-embed .percentage-suffix {
+  font-size: 1rem;
+}
+
+.qualtrics-embed .percentage-row input,
+.qualtrics-embed .percentage-total-value {
+  max-width: 150px;
+  font-size: 1.1rem;
 }
 
 @media (max-width: 700px) {

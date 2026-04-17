@@ -1546,6 +1546,7 @@
       this.proportionRenderer = new ProportionRenderer(this.screenManager, this.config);
       this.numerosityStimulusGenerator = new NumerosityStimulusGenerator(this.config);
       this.proportionTrialFactory = new ProportionTrialFactory(this.config);
+      this.isQualtricsRuntime = this.config.qualtrics.enabled && this.qualtricsAdapter.isAvailable();
       this.participantId = normalizeParticipantId(
         participantId ||
           this.embeddedAssignments.participantId ||
@@ -1557,6 +1558,12 @@
         this.embeddedAssignments.sessionId ||
         this.queryParams.sessionId ||
         `session-${Date.now()}`;
+      if (this.mountEl && this.mountEl.classList) {
+        this.mountEl.classList.add("behavioral-experiment-root");
+        if (this.isQualtricsRuntime) {
+          this.mountEl.classList.add("qualtrics-embed");
+        }
+      }
       this.counterbalancingAssignment =
         this.embeddedAssignments.counterbalancingAssignment ||
         this.queryParams.counterbalancingAssignment ||
@@ -1573,7 +1580,10 @@
     }
 
     async run() {
-      if (!this.participantId && this.config.ui.allowParticipantIdEntry) {
+      if (!this.participantId && this.isQualtricsRuntime) {
+        this.participantId = this.sessionId;
+        this.logger.sessionInfo.participantId = this.participantId;
+      } else if (!this.participantId && this.config.ui.allowParticipantIdEntry) {
         this.participantId = await this.screenManager.showParticipantSetup("");
         this.logger.sessionInfo.participantId = this.participantId;
       }
