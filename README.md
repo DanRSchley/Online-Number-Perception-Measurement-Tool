@@ -126,7 +126,12 @@ Proportion separate trials export one row per displayed target. Joint proportion
 4. Pass the desired task with one embedded-data value such as `task = numerosity_separate_brief`, `task = proportion_joint_evaluation`, or `task = proportion_joint_evaluation_constsum`.
 5. In Qualtrics, the app now suppresses the participant-ID entry screen and uses the Qualtrics session/response identifier automatically when no explicit `participant_id` field is supplied.
 6. For the Qualtrics question HTML, use only `<div id="behavioral-experiment-root"></div>` so the task can take over the full question container cleanly.
-7. If you update `app.js` and Qualtrics still appears to use an older version, add a temporary query suffix to the script URL in the survey question, such as `app.js?v=20260417c`, then hard refresh the preview with `Ctrl+F5`.
+7. If Qualtrics appears to use older assets, prefer loading the files through jsDelivr with a version suffix, then hard refresh the preview with `Ctrl+F5`. Example:
+
+```js
+css.href = "https://cdn.jsdelivr.net/gh/DanRSchley/Online-Number-Perception-Measurement-Tool@main/styles.css?v=20260420a";
+script.src = "https://cdn.jsdelivr.net/gh/DanRSchley/Online-Number-Perception-Measurement-Tool@main/app.js?v=20260420a";
+```
 8. Survey Flow can also control:
    - `number_of_trials`
    - `numerosity_range`
@@ -135,7 +140,7 @@ Proportion separate trials export one row per displayed target. Joint proportion
 Behavior of the extra Qualtrics fields:
 
 - `number_of_trials`: default is `40` in Qualtrics if not supplied. This is a conservative online default based on common 40-64 trial counts in numerical-cognition tasks.
-- `numerosity_range`: interpreted as the maximum numerosity to use, with a fixed lower bound of `4`. The app clamps this at a computed safe upper limit of `144` for the joint-visible dot layout.
+- `numerosity_range`: accepts either a single maximum such as `40` or an explicit range such as `20-40`. A single value means `4` through that maximum. The app clamps the range to a safe upper limit of `144` for the joint-visible dot layout.
 - `brief_display_ms`: overrides the brief dot-presentation duration for `separate_brief` and `joint_brief`.
 
 The adapter writes to:

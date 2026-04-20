@@ -2,6 +2,8 @@
    Paste inside Qualtrics question JavaScript and host app files where Qualtrics can reach them. */
 
 Qualtrics.SurveyEngine.addOnload(function () {
+  var assetVersion = "20260420a";
+  var assetBase = "https://cdn.jsdelivr.net/gh/DanRSchley/Online-Number-Perception-Measurement-Tool@main/";
   var q = this;
   var container = document.createElement("div");
   container.id = "behavioral-experiment-root";
@@ -42,11 +44,11 @@ Qualtrics.SurveyEngine.addOnload(function () {
   } else {
     var css = document.createElement("link");
     css.rel = "stylesheet";
-    css.href = "https://danrschley.github.io/Online-Number-Perception-Measurement-Tool/styles.css";
+    css.href = assetBase + "styles.css?v=" + assetVersion;
     document.head.appendChild(css);
 
     var script = document.createElement("script");
-    script.src = "https://danrschley.github.io/Online-Number-Perception-Measurement-Tool/app.js";
+    script.src = assetBase + "app.js?v=" + assetVersion;
     script.onload = startExperiment;
     document.body.appendChild(script);
   }

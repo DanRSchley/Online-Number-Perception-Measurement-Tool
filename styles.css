@@ -60,6 +60,14 @@ body {
   gap: 24px;
 }
 
+.screen--message {
+  align-items: center;
+}
+
+.screen--message .message {
+  width: 100%;
+}
+
 .panel {
   width: min(1360px, 98vw);
   padding: 56px;
@@ -119,6 +127,17 @@ input[type="text"] {
   color: var(--input-fg);
   font: inherit;
   font-size: 1.15rem;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 input[type="range"] {
@@ -322,7 +341,14 @@ input[type="range"] {
   min-height: auto;
   align-items: flex-start;
   justify-content: flex-start;
-  padding: 8px 8px 18px;
+  padding: 0 6px 14px;
+}
+
+.qualtrics-embed .screen--message {
+  min-height: 28vh;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
 }
 
 .qualtrics-embed .screen--stack {
@@ -330,9 +356,9 @@ input[type="range"] {
 }
 
 .qualtrics-embed .panel {
-  width: min(1080px, 100%);
+  width: min(980px, 100%);
   margin: 0 auto;
-  padding: 24px 28px;
+  padding: 20px 24px;
 }
 
 .qualtrics-embed .panel h1,
@@ -347,21 +373,29 @@ input[type="range"] {
 }
 
 .qualtrics-embed .message {
-  font-size: clamp(1.3rem, 1.8vw, 2rem);
+  font-size: clamp(1.2rem, 1.65vw, 1.8rem);
+}
+
+.qualtrics-embed .fixation {
+  font-size: clamp(2.5rem, 5vw, 3.8rem);
 }
 
 .qualtrics-embed .canvas-stage,
 .qualtrics-embed .bar-stage {
-  gap: 18px;
+  gap: 14px;
+}
+
+.qualtrics-embed .canvas-stage {
+  width: min(760px, 88vw);
 }
 
 .qualtrics-embed .stimulus-canvas {
-  width: min(972px, 92vw);
-  height: min(558px, 52vh);
+  width: min(760px, 88vw);
+  height: min(300px, 31vh);
 }
 
 .qualtrics-embed .bar-heading {
-  width: min(972px, 92vw);
+  width: min(820px, 90vw);
 }
 
 .qualtrics-embed .bar-heading h2 {
@@ -375,18 +409,19 @@ input[type="range"] {
 }
 
 .qualtrics-embed .bar-svg {
-  width: min(972px, 92vw);
-  height: min(306px, 30vh);
+  width: min(820px, 90vw);
+  height: min(230px, 22vh);
 }
 
 .qualtrics-embed .response-panel {
-  width: min(882px, 92vw);
-  gap: 14px;
+  width: min(720px, 90vw);
+  gap: 10px;
+  margin-top: 2px;
 }
 
 .qualtrics-embed .percentage-grid,
 .qualtrics-embed .percentage-total-wrap {
-  width: min(738px, 92vw);
+  width: min(640px, 90vw);
 }
 
 .qualtrics-embed .percentage-row label,
@@ -401,6 +436,25 @@ input[type="range"] {
 .qualtrics-embed .percentage-row input,
 .qualtrics-embed .percentage-total-value {
   max-width: 135px;
+  font-size: 1rem;
+}
+
+.qualtrics-embed .response-grid {
+  width: min(640px, 90vw);
+  gap: 10px 12px;
+}
+
+.qualtrics-embed .response-field label {
+  font-size: 1rem;
+}
+
+.qualtrics-embed input[type="text"] {
+  font-size: 1rem;
+  padding: 12px 14px;
+}
+
+.qualtrics-embed button {
+  padding: 13px 22px;
   font-size: 1rem;
 }
 

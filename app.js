@@ -276,18 +276,25 @@
     }
     const text = String(raw).trim();
     const rangeMatch = text.match(/^(\d+)\s*[-,:]\s*(\d+)$/);
+    let minValue = NUMEROSITY_RANGE_MIN;
     let maxValue = null;
     if (rangeMatch) {
+      minValue = Number(rangeMatch[1]);
       maxValue = Number(rangeMatch[2]);
     } else {
       maxValue = Number(text);
     }
-    if (!Number.isFinite(maxValue)) {
+    if (!Number.isFinite(maxValue) || !Number.isFinite(minValue)) {
       return { min: NUMEROSITY_RANGE_MIN, max: fallbackMax };
     }
+    minValue = clamp(Math.round(minValue), NUMEROSITY_RANGE_MIN, fallbackMax);
+    maxValue = clamp(Math.round(maxValue), NUMEROSITY_RANGE_MIN, fallbackMax);
+    if (maxValue < minValue) {
+      maxValue = minValue;
+    }
     return {
-      min: NUMEROSITY_RANGE_MIN,
-      max: clamp(Math.round(maxValue), NUMEROSITY_RANGE_MIN, fallbackMax)
+      min: minValue,
+      max: maxValue
     };
   }
 
@@ -330,6 +337,15 @@
     const usableHeight = jointHeight - 82 - 24;
     const squareCap = Math.floor(Math.min(usableWidth, usableHeight) / NUMEROSITY_RANGE_CELL_PX);
     return Math.max(NUMEROSITY_RANGE_MIN, squareCap * squareCap);
+  }
+
+  function applyQualtricsUiTuning(config) {
+    config.ui.showFullscreenPrompt = false;
+    config.ui.numerosityCanvasWidth = Math.min(config.ui.numerosityCanvasWidth, 1040);
+    config.ui.numerosityCanvasHeight = Math.min(config.ui.numerosityCanvasHeight, 620);
+    config.ui.proportionSvgWidth = Math.min(config.ui.proportionSvgWidth, 980);
+    config.ui.proportionSvgHeight = Math.min(config.ui.proportionSvgHeight, 380);
+    return config;
   }
 
   function rescaleNumerosityTrialSets(trialSets, targetMin, targetMax) {
@@ -609,7 +625,7 @@
     }
 
     async showMessage(message, durationMs, extraClass) {
-      const screen = this.createScreen(`screen screen--stack ${extraClass || ""}`.trim());
+      const screen = this.createScreen(`screen screen--stack screen--message ${extraClass || ""}`.trim());
       const text = document.createElement("div");
       text.className = "message";
       text.textContent = message;
@@ -984,9 +1000,7 @@
       const screen = this.screenManager.createScreen();
       const panel = this.createResponsePanel(promptText);
       const input = document.createElement("input");
-      input.type = "number";
-      input.step = "1";
-      input.min = "0";
+      input.type = "text";
       input.inputMode = "numeric";
       const button = document.createElement("button");
       button.textContent = submitLabel || "Continue";
@@ -1025,9 +1039,7 @@
     async collectSingleIntegerResponseEmbedded(host, promptText, submitLabel) {
       const panel = this.createResponsePanel(promptText);
       const input = document.createElement("input");
-      input.type = "number";
-      input.step = "1";
-      input.min = "0";
+      input.type = "text";
       input.inputMode = "numeric";
       const button = document.createElement("button");
       button.textContent = submitLabel || "Continue";
@@ -1074,9 +1086,7 @@
         const caption = document.createElement("label");
         caption.textContent = label;
         const input = document.createElement("input");
-        input.type = "number";
-        input.step = "1";
-        input.min = "0";
+        input.type = "text";
         input.inputMode = "numeric";
         wrapper.appendChild(caption);
         wrapper.appendChild(input);
@@ -1132,9 +1142,7 @@
         const caption = document.createElement("label");
         caption.textContent = label;
         const input = document.createElement("input");
-        input.type = "number";
-        input.step = "1";
-        input.min = "0";
+        input.type = "text";
         input.inputMode = "numeric";
         wrapper.appendChild(caption);
         wrapper.appendChild(input);
@@ -1201,10 +1209,7 @@
         });
       } else {
         control = document.createElement("input");
-        control.type = "number";
-        control.min = "0";
-        control.max = "100";
-        control.step = "1";
+        control.type = "text";
         control.inputMode = "numeric";
         readout.textContent = "Enter a value from 0 to 100";
       }
@@ -1267,10 +1272,7 @@
         });
       } else {
         control = document.createElement("input");
-        control.type = "number";
-        control.min = "0";
-        control.max = "100";
-        control.step = "1";
+        control.type = "text";
         control.inputMode = "numeric";
         readout.textContent = "Enter a value from 0 to 100";
       }
@@ -1315,10 +1317,7 @@
       const row = document.createElement("div");
       row.className = "percent-input-row";
       const input = document.createElement("input");
-      input.type = "number";
-      input.min = "0";
-      input.max = "100";
-      input.step = "0.01";
+      input.type = "text";
       input.inputMode = "decimal";
       const unit = document.createElement("span");
       unit.className = "percent-unit";
@@ -1390,10 +1389,7 @@
         const caption = document.createElement("label");
         caption.textContent = `Block ${label}`;
         const input = document.createElement("input");
-        input.type = "number";
-        input.min = "0";
-        input.max = "100";
-        input.step = "0.01";
+        input.type = "text";
         input.inputMode = "decimal";
         input.addEventListener("input", updateTotal);
         const suffix = document.createElement("div");
@@ -1663,13 +1659,16 @@
       this.queryParams = parseQueryParams();
       this.qualtricsAdapter = qualtricsAdapter || new QualtricsAdapter(this.config);
       this.embeddedAssignments = embeddedAssignments || {};
+      this.isQualtricsRuntime = this.config.qualtrics.enabled && this.qualtricsAdapter.isAvailable();
+      if (this.isQualtricsRuntime) {
+        applyQualtricsUiTuning(this.config);
+      }
       this.screenManager = new ScreenManager(mountEl, this.config);
       this.responseManager = new ResponseManager(this.screenManager);
       this.numerosityRenderer = new NumerosityRenderer(this.screenManager, this.config);
       this.proportionRenderer = new ProportionRenderer(this.screenManager, this.config);
       this.numerosityStimulusGenerator = new NumerosityStimulusGenerator(this.config);
       this.proportionTrialFactory = new ProportionTrialFactory(this.config);
-      this.isQualtricsRuntime = this.config.qualtrics.enabled && this.qualtricsAdapter.isAvailable();
       this.safeNumerosityMax = computeSafeNumerosityMax(this.config);
       this.participantId = normalizeParticipantId(
         participantId ||
