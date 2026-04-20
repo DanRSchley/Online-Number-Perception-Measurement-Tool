@@ -1009,17 +1009,31 @@
       return panel;
     }
 
+    createNumericInputControl(inputMode) {
+      const row = document.createElement("div");
+      row.className = "response-input-row";
+      const input = document.createElement("input");
+      input.type = "text";
+      input.inputMode = inputMode || "numeric";
+      input.autocomplete = "off";
+      const suffix = document.createElement("span");
+      suffix.className = "response-unit";
+      suffix.textContent = "dots";
+      row.appendChild(input);
+      row.appendChild(suffix);
+      return { row, input, suffix };
+    }
+
     async collectSingleIntegerResponse(promptText, submitLabel) {
       const screen = this.screenManager.createScreen();
       const panel = this.createResponsePanel(promptText);
-      const input = document.createElement("input");
-      input.type = "text";
-      input.inputMode = "numeric";
+      const control = this.createNumericInputControl("numeric");
+      const input = control.input;
       const button = document.createElement("button");
       button.textContent = submitLabel || "Continue";
       const error = document.createElement("div");
       error.className = "error";
-      panel.appendChild(input);
+      panel.appendChild(control.row);
       panel.appendChild(button);
       panel.appendChild(error);
       screen.appendChild(panel);
@@ -1051,14 +1065,13 @@
 
     async collectSingleIntegerResponseEmbedded(host, promptText, submitLabel) {
       const panel = this.createResponsePanel(promptText);
-      const input = document.createElement("input");
-      input.type = "text";
-      input.inputMode = "numeric";
+      const control = this.createNumericInputControl("numeric");
+      const input = control.input;
       const button = document.createElement("button");
       button.textContent = submitLabel || "Continue";
       const error = document.createElement("div");
       error.className = "error";
-      panel.appendChild(input);
+      panel.appendChild(control.row);
       panel.appendChild(button);
       panel.appendChild(error);
       host.appendChild(panel);
@@ -1098,11 +1111,10 @@
         wrapper.className = "response-field";
         const caption = document.createElement("label");
         caption.textContent = label;
-        const input = document.createElement("input");
-        input.type = "text";
-        input.inputMode = "numeric";
+        const control = this.createNumericInputControl("numeric");
+        const input = control.input;
         wrapper.appendChild(caption);
-        wrapper.appendChild(input);
+        wrapper.appendChild(control.row);
         inputs[label] = input;
         grid.appendChild(wrapper);
       });
@@ -1154,11 +1166,10 @@
         wrapper.className = "response-field";
         const caption = document.createElement("label");
         caption.textContent = label;
-        const input = document.createElement("input");
-        input.type = "text";
-        input.inputMode = "numeric";
+        const control = this.createNumericInputControl("numeric");
+        const input = control.input;
         wrapper.appendChild(caption);
-        wrapper.appendChild(input);
+        wrapper.appendChild(control.row);
         inputs[label] = input;
         grid.appendChild(wrapper);
       });

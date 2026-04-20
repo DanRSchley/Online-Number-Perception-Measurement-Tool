@@ -2,7 +2,7 @@
    Paste inside Qualtrics question JavaScript and host app files where Qualtrics can reach them. */
 
 Qualtrics.SurveyEngine.addOnload(function () {
-  var assetVersion = "20260420d";
+  var assetVersion = "20260420e";
   var assetBase = "https://cdn.jsdelivr.net/gh/DanRSchley/Online-Number-Perception-Measurement-Tool@main/";
   var q = this;
   var container = document.createElement("div");
@@ -12,7 +12,8 @@ Qualtrics.SurveyEngine.addOnload(function () {
   inlineStyle.textContent =
     "#behavioral-experiment-root{width:100%;max-width:100%;overflow-x:hidden;}" +
     "#behavioral-experiment-root .screen{width:100% !important;max-width:100% !important;overflow:hidden;}" +
-    "#behavioral-experiment-root .screen--message{min-height:22vh !important;display:flex !important;align-items:center !important;justify-content:center !important;padding:0 !important;}" +
+    "#behavioral-experiment-root .screen--message{min-height:clamp(220px,46vh,380px) !important;display:flex !important;align-items:center !important;justify-content:center !important;padding:0 !important;}" +
+    "#behavioral-experiment-root .screen--message.fixation{min-height:clamp(260px,54vh,440px) !important;}" +
     "#behavioral-experiment-root .message{width:100% !important;text-align:center !important;}" +
     "#behavioral-experiment-root .fixation{display:block !important;width:100% !important;text-align:center !important;font-size:clamp(2.4rem,4vw,3.4rem) !important;line-height:1 !important;}" +
     "#behavioral-experiment-root .canvas-stage{width:min(680px,82vw) !important;max-width:100% !important;overflow:hidden !important;margin:0 auto !important;}" +
@@ -21,6 +22,9 @@ Qualtrics.SurveyEngine.addOnload(function () {
     "#behavioral-experiment-root .bar-svg{width:min(760px,88vw) !important;max-width:100% !important;height:auto !important;}" +
     "#behavioral-experiment-root .response-panel{width:min(640px,88vw) !important;max-width:100% !important;}" +
     "#behavioral-experiment-root .response-grid{width:min(640px,88vw) !important;max-width:100% !important;}" +
+    "#behavioral-experiment-root .response-input-row{display:flex !important;align-items:center !important;justify-content:center !important;gap:8px !important;}" +
+    "#behavioral-experiment-root .response-input-row input{width:min(150px,100%) !important;min-width:0 !important;}" +
+    "#behavioral-experiment-root .response-unit{font-size:0.95rem !important;color:#5f6979 !important;white-space:nowrap !important;}" +
     "#behavioral-experiment-root input[type='number']::-webkit-outer-spin-button," +
     "#behavioral-experiment-root input[type='number']::-webkit-inner-spin-button{-webkit-appearance:none !important;margin:0 !important;}" +
     "#behavioral-experiment-root input[type='number']{-moz-appearance:textfield !important;appearance:textfield !important;}";
