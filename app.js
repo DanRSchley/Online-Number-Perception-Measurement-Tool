@@ -195,10 +195,10 @@
   function getJointLayoutMetrics(config, arrayCount) {
     const grid = getNumerosityGridDimensions(arrayCount || DEFAULT_NUMEROSITY_ARRAY_COUNT);
     if (grid.columns === 3 && grid.rows === 3) {
-      return { margin: 34, gap: 24, labelReservedTop: 36, labelFontSize: 24 };
+      return { margin: 28, gap: 18, labelReservedTop: 28, labelFontSize: 22 };
     }
     if (grid.columns === 3) {
-      return { margin: 42, gap: 32, labelReservedTop: 48, labelFontSize: 30 };
+      return { margin: 36, gap: 24, labelReservedTop: 40, labelFontSize: 28 };
     }
     return { margin: 56, gap: 44, labelReservedTop: 64, labelFontSize: 40 };
   }
@@ -869,9 +869,11 @@
         context.fill();
       });
       if (label) {
+        const labelFontSize = region.labelFontSize || 42;
+        const baselineY = region.y + Math.max(labelFontSize + 8, (region.labelReservedTop || 0) - 4);
         context.fillStyle = this.config.ui.textColor;
-        context.font = "bold 42px Segoe UI";
-        context.fillText(label, region.x + 16, region.y + 46);
+        context.font = `bold ${labelFontSize}px Segoe UI`;
+        context.fillText(label, region.x + 12, baselineY);
       }
     }
 
@@ -1667,10 +1669,11 @@
 
     createRegion(condition, label, arrayCount) {
       if (condition.startsWith("joint")) {
-        const margin = 70;
-        const gap = 72;
         const count = arrayCount || DEFAULT_NUMEROSITY_ARRAY_COUNT;
         const grid = getNumerosityGridDimensions(count);
+        const layout = getJointLayoutMetrics(this.config, count);
+        const margin = layout.margin;
+        const gap = layout.gap;
         const labels = getLabelSet(count);
         const width =
           (this.canvasWidth - margin * 2 - gap * (grid.columns - 1)) / grid.columns;
@@ -1685,7 +1688,8 @@
             y: margin + row * (height + gap),
             width,
             height,
-            labelReservedTop: 82
+            labelReservedTop: layout.labelReservedTop,
+            labelFontSize: layout.labelFontSize
           };
         });
         return slots[label];
