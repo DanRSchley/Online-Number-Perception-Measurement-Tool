@@ -161,6 +161,7 @@ input[type="range"] {
   flex-direction: column;
   align-items: center;
   gap: 28px;
+  overflow: hidden;
 }
 
 .stimulus-canvas {
@@ -335,6 +336,7 @@ input[type="range"] {
 
 .qualtrics-embed {
   width: 100%;
+  overflow-x: hidden;
 }
 
 .qualtrics-embed .screen {
@@ -387,6 +389,7 @@ input[type="range"] {
 
 .qualtrics-embed .canvas-stage {
   width: min(760px, 88vw);
+  overflow: hidden;
 }
 
 .qualtrics-embed .stimulus-canvas {

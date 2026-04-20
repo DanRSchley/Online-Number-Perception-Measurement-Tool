@@ -627,7 +627,7 @@
     async showMessage(message, durationMs, extraClass) {
       const screen = this.createScreen(`screen screen--stack screen--message ${extraClass || ""}`.trim());
       const text = document.createElement("div");
-      text.className = "message";
+      text.className = `message ${extraClass || ""}`.trim();
       text.textContent = message;
       screen.appendChild(text);
       this.render(screen);
@@ -749,8 +749,6 @@
       canvas.className = "stimulus-canvas";
       canvas.width = this.canvasWidth * window.devicePixelRatio;
       canvas.height = this.canvasHeight * window.devicePixelRatio;
-      canvas.style.width = `${this.canvasWidth}px`;
-      canvas.style.height = `${this.canvasHeight}px`;
       const context = canvas.getContext("2d");
       context.scale(window.devicePixelRatio, window.devicePixelRatio);
       stage.appendChild(canvas);

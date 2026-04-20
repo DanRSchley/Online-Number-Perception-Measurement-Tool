@@ -2,7 +2,7 @@
    Paste inside Qualtrics question JavaScript and host app files where Qualtrics can reach them. */
 
 Qualtrics.SurveyEngine.addOnload(function () {
-  var assetVersion = "20260420a";
+  var assetVersion = "20260420c";
   var assetBase = "https://cdn.jsdelivr.net/gh/DanRSchley/Online-Number-Perception-Measurement-Tool@main/";
   var q = this;
   var container = document.createElement("div");
