@@ -16,7 +16,10 @@ Qualtrics.SurveyEngine.addOnload(function () {
     sessionId: "${e://Field/ResponseID}",
     condition: "${e://Field/task_condition}",
     counterbalancingAssignment: "${e://Field/counterbalance_assignment}",
-    task: "${e://Field/task}"
+    task: "${e://Field/task}",
+    numberOfTrials: "${e://Field/number_of_trials}",
+    numerosityRange: "${e://Field/numerosity_range}",
+    briefDisplayMs: "${e://Field/brief_display_ms}"
   };
 
   function startExperiment() {

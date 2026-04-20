@@ -3,13 +3,12 @@
     "title": "Proportion Judgment Task",
     "instructionsTitle": "Proportion Judgment Task",
     "instructionsText": [
-      "Preview configuration: joint evaluation for the proportion task without a running total.",
-      "Enter open-ended percentages for all five labeled blocks.",
-      "The entries do not need to total 100."
+      "Preview configuration: joint evaluation with a constant-sum requirement.",
+      "Enter open-ended percentages for all five labeled blocks so that they total 100."
     ]
   },
   "export": {
-    "filePrefix": "proportion-joint-only"
+    "filePrefix": "proportion-joint-constsum"
   },
   "blocks": [
     {
@@ -34,9 +33,9 @@
   "taskSettings": {
     "proportion": {
       "responseMethod": "numeric",
-      "showJointTotalBox": false,
-      "requireJointTotal100": false,
-      "jointHelperText": "Enter percentages for A through E. Use your best visual estimate. Decimals are allowed.",
+      "showJointTotalBox": true,
+      "requireJointTotal100": true,
+      "jointHelperText": "Enter percentages for A through E so that they total 100. Use your best visual estimate. Decimals are allowed.",
       "trialList": [
         {
           "trial_id": "PT001",

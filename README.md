@@ -116,17 +116,27 @@ At the end of the session the app can:
 
 Numerosity exports one row per array judgment. Joint numerosity trials still become four rows so they match separate conditions cleanly.
 
-Proportion exports one row per trial with the target chunk metadata and normalized response.
+Proportion separate trials export one row per displayed target. Joint proportion trials export one row per labeled block `A-E` for each bar stimulus.
 
 ## Qualtrics use
 
 1. Host `index.html`, `app.js`, `styles.css`, and your config JSON somewhere Qualtrics can reach.
 2. Create embedded data fields in Qualtrics for participant ID, task assignment, and saved results.
 3. Use the example in `qualtrics/qualtrics-snippet.js` as a starting point.
-4. Pass the desired task with one embedded-data value such as `task = numerosity_separate_brief` or `task = proportion_joint_evaluation`.
+4. Pass the desired task with one embedded-data value such as `task = numerosity_separate_brief`, `task = proportion_joint_evaluation`, or `task = proportion_joint_evaluation_constsum`.
 5. In Qualtrics, the app now suppresses the participant-ID entry screen and uses the Qualtrics session/response identifier automatically when no explicit `participant_id` field is supplied.
 6. For the Qualtrics question HTML, use only `<div id="behavioral-experiment-root"></div>` so the task can take over the full question container cleanly.
 7. If you update `app.js` and Qualtrics still appears to use an older version, add a temporary query suffix to the script URL in the survey question, such as `app.js?v=20260417c`, then hard refresh the preview with `Ctrl+F5`.
+8. Survey Flow can also control:
+   - `number_of_trials`
+   - `numerosity_range`
+   - `brief_display_ms`
+
+Behavior of the extra Qualtrics fields:
+
+- `number_of_trials`: default is `40` in Qualtrics if not supplied. This is a conservative online default based on common 40-64 trial counts in numerical-cognition tasks.
+- `numerosity_range`: interpreted as the maximum numerosity to use, with a fixed lower bound of `4`. The app clamps this at a computed safe upper limit of `144` for the joint-visible dot layout.
+- `brief_display_ms`: overrides the brief dot-presentation duration for `separate_brief` and `joint_brief`.
 
 The adapter writes to:
 
@@ -146,6 +156,7 @@ Supported task keys for Survey Flow:
 - `numerosity_joint_visible`
 - `proportion_only`
 - `proportion_joint_evaluation`
+- `proportion_joint_evaluation_constsum`
 - `proportion_separate_evaluation`
 
 ## Current scope

@@ -23,7 +23,7 @@
       proportionSvgWidth: 1220,
       proportionSvgHeight: 520,
       showFullscreenPrompt: true,
-      allowParticipantIdEntry: true
+      allowParticipantIdEntry: false
     },
     timing: {
       readyMs: 2000,
@@ -78,6 +78,8 @@
         jointHelperText: "Enter percentages for A through E so that they total 100. Use your best visual estimate. Decimals are allowed.",
         separatePrompt: "What percentage of the full bar is shaded?",
         separateHelperText: "Type a number from 0 to 100. Use your best visual estimate. Decimals are allowed.",
+        showJointTotalBox: true,
+        requireJointTotal100: true,
         showTargetLabelInSeparate: false,
         colorPalette: {
           A: "#0072B2",
@@ -124,8 +126,34 @@
     numerosity_joint_visible: hostedPath("configs/numerosity-joint-visible.json"),
     proportion_only: hostedPath("configs/proportion-only.json"),
     proportion_joint_evaluation: hostedPath("configs/proportion-joint-only.json"),
+    proportion_joint_evaluation_constsum: hostedPath("configs/proportion-joint-constsum.json"),
     proportion_separate_evaluation: hostedPath("configs/proportion-separate-only.json")
   };
+
+  // Online numerical-cognition studies commonly use roughly 40-64 test trials.
+  // Use 40 as the conservative default for Qualtrics deployments unless overridden.
+  const DEFAULT_QUALTRICS_TRIALS = 40;
+  const NUMEROSITY_RANGE_MIN = 4;
+  const NUMEROSITY_RANGE_CELL_PX = 19;
+
+  function parsePositiveInteger(value) {
+    if (value === undefined || value === null || value === "") {
+      return null;
+    }
+    const parsed = Number.parseInt(String(value).trim(), 10);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      return null;
+    }
+    return parsed;
+  }
+
+  function cloneTrialSet(trialSet) {
+    return deepClone(trialSet);
+  }
+
+  function cloneTrial(trial) {
+    return deepClone(trial);
+  }
 
   function deepClone(value) {
     return JSON.parse(JSON.stringify(value));
@@ -242,6 +270,27 @@
     return value;
   }
 
+  function parseRangeOverride(raw, fallbackMax) {
+    if (raw === undefined || raw === null || raw === "") {
+      return { min: NUMEROSITY_RANGE_MIN, max: fallbackMax };
+    }
+    const text = String(raw).trim();
+    const rangeMatch = text.match(/^(\d+)\s*[-,:]\s*(\d+)$/);
+    let maxValue = null;
+    if (rangeMatch) {
+      maxValue = Number(rangeMatch[2]);
+    } else {
+      maxValue = Number(text);
+    }
+    if (!Number.isFinite(maxValue)) {
+      return { min: NUMEROSITY_RANGE_MIN, max: fallbackMax };
+    }
+    return {
+      min: NUMEROSITY_RANGE_MIN,
+      max: clamp(Math.round(maxValue), NUMEROSITY_RANGE_MIN, fallbackMax)
+    };
+  }
+
   function nowIso() {
     return new Date().toISOString();
   }
@@ -272,6 +321,77 @@
 
   function normalizeParticipantId(value) {
     return String(value || "").trim();
+  }
+
+  function computeSafeNumerosityMax(config) {
+    const jointWidth = (config.ui.numerosityCanvasWidth - 70 * 2 - 72) / 2;
+    const jointHeight = (config.ui.numerosityCanvasHeight - 70 * 2 - 72) / 2;
+    const usableWidth = jointWidth - 48;
+    const usableHeight = jointHeight - 82 - 24;
+    const squareCap = Math.floor(Math.min(usableWidth, usableHeight) / NUMEROSITY_RANGE_CELL_PX);
+    return Math.max(NUMEROSITY_RANGE_MIN, squareCap * squareCap);
+  }
+
+  function rescaleNumerosityTrialSets(trialSets, targetMin, targetMax) {
+    const originalValues = trialSets.flatMap((trialSet) =>
+      trialSet.arrays.map((arrayDef) => Number(arrayDef.numerosity))
+    );
+    const originalMin = Math.min(...originalValues);
+    const originalMax = Math.max(...originalValues);
+    if (targetMin <= originalMin && targetMax >= originalMax) {
+      return trialSets.map(cloneTrialSet);
+    }
+    const span = Math.max(1, originalMax - originalMin);
+    return trialSets.map((trialSet) => {
+      const nextTrialSet = cloneTrialSet(trialSet);
+      nextTrialSet.arrays = nextTrialSet.arrays.map((arrayDef) => {
+        const ratio = (Number(arrayDef.numerosity) - originalMin) / span;
+        const scaled = targetMin + ratio * (targetMax - targetMin);
+        return {
+          ...arrayDef,
+          numerosity: clamp(Math.round(scaled), targetMin, targetMax)
+        };
+      });
+      return nextTrialSet;
+    });
+  }
+
+  function expandNumerosityTrialSets(trialSets, desiredCount) {
+    if (!desiredCount || desiredCount <= 0 || !trialSets.length) {
+      return trialSets.map(cloneTrialSet);
+    }
+    const output = [];
+    for (let index = 0; index < desiredCount; index += 1) {
+      const source = cloneTrialSet(trialSets[index % trialSets.length]);
+      const cycle = Math.floor(index / trialSets.length);
+      if (cycle > 0) {
+        source.trialSetId = `${source.trialSetId}_R${cycle + 1}`;
+        source.arrays = source.arrays.map((arrayDef, arrayIndex) => ({
+          ...arrayDef,
+          seed: Number(arrayDef.seed) + cycle * 100000 + arrayIndex * 1000
+        }));
+      }
+      output.push(source);
+    }
+    return output;
+  }
+
+  function expandTrials(trials, desiredCount) {
+    if (!desiredCount || desiredCount <= 0 || !trials.length) {
+      return trials.map(cloneTrial);
+    }
+    const output = [];
+    for (let index = 0; index < desiredCount; index += 1) {
+      const source = cloneTrial(trials[index % trials.length]);
+      const cycle = Math.floor(index / trials.length);
+      if (cycle > 0) {
+        source.trial_id = `${source.trial_id || source.stimulus_id || "trial"}_R${cycle + 1}_${index + 1}`;
+        source.stimulus_id = `${source.stimulus_id || source.trial_id || "stim"}_R${cycle + 1}`;
+        source.random_seed = Number(source.random_seed || hashString(source.trial_id || source.stimulus_id || index)) + cycle * 100000;
+      }
+      output.push(source);
+    }
+    return output;
   }
 
   function deriveParityAssignment(participantId) {
@@ -1239,7 +1359,8 @@
       });
     }
 
-    async collectJointPercentageResponsesEmbedded(host, labels, promptText) {
+    async collectJointPercentageResponsesEmbedded(host, labels, promptText, options) {
+      const settings = options || {};
       const panel = this.createResponsePanel(promptText);
       const grid = document.createElement("div");
       grid.className = "percentage-grid";
@@ -1290,7 +1411,9 @@
       const error = document.createElement("div");
       error.className = "error";
       panel.appendChild(grid);
-      panel.appendChild(totalWrap);
+      if (settings.showTotalBox !== false) {
+        panel.appendChild(totalWrap);
+      }
       panel.appendChild(button);
       panel.appendChild(error);
       host.appendChild(panel);
@@ -1309,7 +1432,7 @@
             responses[label] = value;
           }
           const total = labels.reduce((sum, label) => sum + responses[label], 0);
-          if (Math.abs(total - 100) > 0.5) {
+          if (settings.requireTotal100 !== false && Math.abs(total - 100) > 0.5) {
             error.textContent = "Please make the five percentages total 100.";
             return;
           }
@@ -1547,6 +1670,7 @@
       this.numerosityStimulusGenerator = new NumerosityStimulusGenerator(this.config);
       this.proportionTrialFactory = new ProportionTrialFactory(this.config);
       this.isQualtricsRuntime = this.config.qualtrics.enabled && this.qualtricsAdapter.isAvailable();
+      this.safeNumerosityMax = computeSafeNumerosityMax(this.config);
       this.participantId = normalizeParticipantId(
         participantId ||
           this.embeddedAssignments.participantId ||
@@ -1568,6 +1692,25 @@
         this.embeddedAssignments.counterbalancingAssignment ||
         this.queryParams.counterbalancingAssignment ||
         deriveParityAssignment(this.participantId || this.sessionId);
+      this.requestedTrialCount =
+        parsePositiveInteger(this.embeddedAssignments.numberOfTrials) ||
+        parsePositiveInteger(this.embeddedAssignments.number_of_trials) ||
+        parsePositiveInteger(this.queryParams.number_of_trials) ||
+        (this.isQualtricsRuntime ? DEFAULT_QUALTRICS_TRIALS : null);
+      this.requestedNumerosityRange = parseRangeOverride(
+        this.embeddedAssignments.numerosityRange ||
+          this.embeddedAssignments.numerosity_range ||
+          this.queryParams.numerosity_range,
+        this.safeNumerosityMax
+      );
+      this.requestedBriefDisplayMs =
+        parsePositiveInteger(this.embeddedAssignments.briefDisplayMs) ||
+        parsePositiveInteger(this.embeddedAssignments.brief_display_ms) ||
+        parsePositiveInteger(this.queryParams.brief_display_ms) ||
+        null;
+      if (this.requestedBriefDisplayMs) {
+        this.config.timing.briefDisplayMs = this.requestedBriefDisplayMs;
+      }
       this.logger = new DataLogger({
         participantId: this.participantId || null,
         sessionId: this.sessionId,
@@ -1575,6 +1718,14 @@
         counterbalancingAssignment: this.counterbalancingAssignment,
         settingsUsed: this.config
       });
+      this.logger.metadata.qualtrics_overrides = {
+        task: this.embeddedAssignments.task || this.queryParams.task || null,
+        number_of_trials: this.requestedTrialCount,
+        numerosity_range_min: this.requestedNumerosityRange.min,
+        numerosity_range_max: this.requestedNumerosityRange.max,
+        numerosity_range_safe_max: this.safeNumerosityMax,
+        brief_display_ms: this.requestedBriefDisplayMs || this.config.timing.briefDisplayMs
+      };
       this.globalTrialIndex = 0;
       this.proportionTrialPool = this.proportionTrialFactory.buildTrialPool();
     }
@@ -1583,10 +1734,12 @@
       if (!this.participantId && this.isQualtricsRuntime) {
         this.participantId = this.sessionId;
         this.logger.sessionInfo.participantId = this.participantId;
-      } else if (!this.participantId && this.config.ui.allowParticipantIdEntry) {
-        this.participantId = await this.screenManager.showParticipantSetup("");
-        this.logger.sessionInfo.participantId = this.participantId;
       }
+      // Participant entry is intentionally disabled for now so Qualtrics owns identity handling.
+      // else if (!this.participantId && this.config.ui.allowParticipantIdEntry) {
+      //   this.participantId = await this.screenManager.showParticipantSetup("");
+      //   this.logger.sessionInfo.participantId = this.participantId;
+      // }
       await this.showInstructions();
       const blocks = this.resolveBlocks();
       for (let index = 0; index < blocks.length; index += 1) {
@@ -1679,6 +1832,19 @@
       return source;
     }
 
+    getDesiredNumerosityTrialSetCount(block) {
+      if (block.practice) {
+        return null;
+      }
+      if (block.maxTrials) {
+        return block.maxTrials;
+      }
+      if (this.requestedTrialCount) {
+        return Math.max(1, Math.ceil(this.requestedTrialCount / 4));
+      }
+      return null;
+    }
+
     getProportionTrials(block) {
       let trials;
       if (Array.isArray(block.trials)) {
@@ -1690,9 +1856,11 @@
           return matchesFormat && matchesBlock;
         });
       }
-      if (block.maxTrials) {
+      const desiredCount = block.practice ? block.maxTrials : (this.requestedTrialCount || block.maxTrials || null);
+      if (desiredCount) {
+        trials = expandTrials(trials, desiredCount);
         const rng = createSeededRng(hashString(`${this.participantId}-${block.name}`));
-        trials = shuffleWithRng(trials, rng).slice(0, block.maxTrials);
+        trials = shuffleWithRng(trials, rng).slice(0, desiredCount);
       }
       if (block.randomize !== false) {
         const rng = createSeededRng(hashString(`${this.sessionId}-${block.name}-proportion-order`));
@@ -1706,6 +1874,15 @@
       const parts = formatConditionParts(condition);
       const sourceKey = block.practice ? "practiceTrialSets" : block.trialSource || "trialSets";
       let trialSets = this.getNumerosityTrialSets(sourceKey);
+      trialSets = rescaleNumerosityTrialSets(
+        trialSets,
+        this.requestedNumerosityRange.min,
+        this.requestedNumerosityRange.max
+      );
+      const desiredTrialSetCount = this.getDesiredNumerosityTrialSetCount(block);
+      if (desiredTrialSetCount) {
+        trialSets = expandNumerosityTrialSets(trialSets, desiredTrialSetCount);
+      }
       if (block.randomize !== false) {
         const rng = createSeededRng(hashString(`${this.participantId}-${block.name}-order`));
         trialSets = shuffleWithRng(trialSets, rng);
@@ -1969,7 +2146,11 @@
         const responseInfo = await this.responseManager.collectJointPercentageResponsesEmbedded(
           view.stage,
           ["A", "B", "C", "D", "E"],
-          ""
+          "",
+          {
+            showTotalBox: this.config.taskSettings.proportion.showJointTotalBox,
+            requireTotal100: this.config.taskSettings.proportion.requireJointTotal100
+          }
         );
         ["A", "B", "C", "D", "E"].forEach((label) => {
           const targetValue = Number(trial[label]);
@@ -2003,7 +2184,8 @@
             response_method: "numeric_open",
             accuracy: null,
             stimulus_id: trial.stimulus_id || trial.trial_id || null,
-            joint_total_response: responseInfo.total
+            joint_total_response:
+              this.config.taskSettings.proportion.showJointTotalBox !== false ? responseInfo.total : null
           });
           this.globalTrialIndex += 1;
         });
@@ -2121,7 +2303,10 @@
         sessionId: query.sessionId,
         condition: query.condition,
         counterbalancingAssignment: query.counterbalancingAssignment,
-        task: query.task
+        task: query.task,
+        number_of_trials: query.number_of_trials,
+        numerosity_range: query.numerosity_range,
+        brief_display_ms: query.brief_display_ms
       };
     const taskConfig =
       resolveTaskConfig(assignments.task) ||

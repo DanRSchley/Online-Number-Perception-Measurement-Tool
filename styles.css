@@ -322,7 +322,7 @@ input[type="range"] {
   min-height: auto;
   align-items: flex-start;
   justify-content: flex-start;
-  padding: 20px 12px 28px;
+  padding: 8px 8px 18px;
 }
 
 .qualtrics-embed .screen--stack {
@@ -330,24 +330,24 @@ input[type="range"] {
 }
 
 .qualtrics-embed .panel {
-  width: min(1200px, 100%);
+  width: min(1080px, 100%);
   margin: 0 auto;
-  padding: 28px 32px;
+  padding: 24px 28px;
 }
 
 .qualtrics-embed .panel h1,
 .qualtrics-embed .panel h2 {
-  font-size: clamp(2rem, 2.4vw, 2.8rem);
+  font-size: clamp(1.8rem, 2.15vw, 2.5rem);
 }
 
 .qualtrics-embed .panel p,
 .qualtrics-embed .panel li {
-  font-size: 1.05rem;
-  line-height: 1.45;
+  font-size: 0.98rem;
+  line-height: 1.38;
 }
 
 .qualtrics-embed .message {
-  font-size: clamp(1.45rem, 2vw, 2.25rem);
+  font-size: clamp(1.3rem, 1.8vw, 2rem);
 }
 
 .qualtrics-embed .canvas-stage,
@@ -356,52 +356,52 @@ input[type="range"] {
 }
 
 .qualtrics-embed .stimulus-canvas {
-  width: min(1080px, 94vw);
-  height: min(620px, 58vh);
+  width: min(972px, 92vw);
+  height: min(558px, 52vh);
 }
 
 .qualtrics-embed .bar-heading {
-  width: min(1080px, 94vw);
+  width: min(972px, 92vw);
 }
 
 .qualtrics-embed .bar-heading h2 {
-  font-size: clamp(1.85rem, 2.4vw, 2.5rem);
-  margin-bottom: 6px;
+  font-size: clamp(1.65rem, 2.1vw, 2.25rem);
+  margin-bottom: 4px;
 }
 
 .qualtrics-embed .bar-heading p {
-  font-size: 1rem;
-  line-height: 1.35;
+  font-size: 0.92rem;
+  line-height: 1.28;
 }
 
 .qualtrics-embed .bar-svg {
-  width: min(1080px, 94vw);
-  height: min(340px, 34vh);
+  width: min(972px, 92vw);
+  height: min(306px, 30vh);
 }
 
 .qualtrics-embed .response-panel {
-  width: min(980px, 94vw);
-  gap: 18px;
+  width: min(882px, 92vw);
+  gap: 14px;
 }
 
 .qualtrics-embed .percentage-grid,
 .qualtrics-embed .percentage-total-wrap {
-  width: min(820px, 94vw);
+  width: min(738px, 92vw);
 }
 
 .qualtrics-embed .percentage-row label,
 .qualtrics-embed .percentage-total-label {
-  font-size: 1.15rem;
+  font-size: 1.03rem;
 }
 
 .qualtrics-embed .percentage-suffix {
-  font-size: 1rem;
+  font-size: 0.9rem;
 }
 
 .qualtrics-embed .percentage-row input,
 .qualtrics-embed .percentage-total-value {
-  max-width: 150px;
-  font-size: 1.1rem;
+  max-width: 135px;
+  font-size: 1rem;
 }
 
 @media (max-width: 700px) {
