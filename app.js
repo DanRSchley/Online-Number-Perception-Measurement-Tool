@@ -132,7 +132,7 @@
 
   const ALL_LABELS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".slice(0, 10).split("");
   const DEFAULT_NUMEROSITY_ARRAY_COUNT = 4;
-  const SUPPORTED_NUMEROSITY_ARRAY_COUNTS = [2, 4, 6, 9];
+  const SUPPORTED_NUMEROSITY_ARRAY_COUNTS = [2, 4, 6];
   // Online numerical-cognition studies commonly use roughly 40-64 test trials.
   // Use 40 as the conservative default for Qualtrics deployments unless overridden.
   const DEFAULT_QUALTRICS_TRIALS = 40;
@@ -185,8 +185,6 @@
         return { columns: 2, rows: 2 };
       case 6:
         return { columns: 3, rows: 2 };
-      case 9:
-        return { columns: 3, rows: 3 };
       default:
         throw new Error(`Unsupported numerosity array count ${arrayCount}`);
     }
@@ -194,9 +192,6 @@
 
   function getJointLayoutMetrics(config, arrayCount) {
     const grid = getNumerosityGridDimensions(arrayCount || DEFAULT_NUMEROSITY_ARRAY_COUNT);
-    if (grid.columns === 3 && grid.rows === 3) {
-      return { margin: 28, gap: 18, labelReservedTop: 28, labelFontSize: 22 };
-    }
     if (grid.columns === 3) {
       return { margin: 36, gap: 24, labelReservedTop: 40, labelFontSize: 28 };
     }
