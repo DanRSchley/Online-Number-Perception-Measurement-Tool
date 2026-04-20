@@ -130,11 +130,90 @@
     proportion_separate_evaluation: hostedPath("configs/proportion-separate-only.json")
   };
 
+  const ALL_LABELS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".slice(0, 10).split("");
+  const DEFAULT_NUMEROSITY_ARRAY_COUNT = 4;
+  const SUPPORTED_NUMEROSITY_ARRAY_COUNTS = [2, 4, 6, 9];
   // Online numerical-cognition studies commonly use roughly 40-64 test trials.
   // Use 40 as the conservative default for Qualtrics deployments unless overridden.
   const DEFAULT_QUALTRICS_TRIALS = 40;
+  const DEFAULT_PROPORTION_BOX_COUNT = 5;
+  const PROPORTION_BOX_COUNT_MIN = 2;
+  const PROPORTION_BOX_COUNT_MAX = 10;
+  const PROPORTION_VISIBLE_MIN = 0.0025;
+  const PROPORTION_VISIBLE_MAX = 0.9975;
   const NUMEROSITY_RANGE_MIN = 4;
   const NUMEROSITY_RANGE_CELL_PX = 19;
+
+  function getLabelSet(count) {
+    return ALL_LABELS.slice(0, count);
+  }
+
+  function inferTrialLabels(trial, fallbackCount) {
+    if (Array.isArray(trial.labels) && trial.labels.length) {
+      return trial.labels.slice();
+    }
+    const labels = ALL_LABELS.filter((label) => typeof trial[label] === "number");
+    if (labels.length) {
+      return labels;
+    }
+    return getLabelSet(fallbackCount || DEFAULT_PROPORTION_BOX_COUNT);
+  }
+
+  function buildLabelValueFields(labels, source, includeMissing) {
+    const output = {};
+    ALL_LABELS.forEach((label) => {
+      if (labels.includes(label) || includeMissing) {
+        output[label] = source[label] !== undefined ? source[label] : null;
+      }
+    });
+    return output;
+  }
+
+  function createPaletteLookup(basePalette, labels) {
+    const output = {};
+    labels.forEach((label, index) => {
+      output[label] = basePalette[label] || basePalette[ALL_LABELS[index]] || "#DDDDDD";
+    });
+    return output;
+  }
+
+  function getNumerosityGridDimensions(arrayCount) {
+    switch (arrayCount) {
+      case 2:
+        return { columns: 2, rows: 1 };
+      case 4:
+        return { columns: 2, rows: 2 };
+      case 6:
+        return { columns: 3, rows: 2 };
+      case 9:
+        return { columns: 3, rows: 3 };
+      default:
+        throw new Error(`Unsupported numerosity array count ${arrayCount}`);
+    }
+  }
+
+  function interpolateNumericSeries(values, desiredCount) {
+    if (!values.length) {
+      return [];
+    }
+    if (desiredCount <= 1) {
+      return [Math.round(values[0])];
+    }
+    const sorted = values.slice().sort((a, b) => a - b);
+    if (desiredCount === sorted.length) {
+      return sorted.slice();
+    }
+    const output = [];
+    for (let index = 0; index < desiredCount; index += 1) {
+      const position = (index / (desiredCount - 1)) * (sorted.length - 1);
+      const lower = Math.floor(position);
+      const upper = Math.ceil(position);
+      const ratio = position - lower;
+      const interpolated = sorted[lower] + (sorted[upper] - sorted[lower]) * ratio;
+      output.push(Math.round(interpolated));
+    }
+    return output;
+  }
 
   function parsePositiveInteger(value) {
     if (value === undefined || value === null || value === "") {
@@ -145,6 +224,22 @@
       return null;
     }
     return parsed;
+  }
+
+  function parseChoiceInteger(value, allowedValues, fallbackValue) {
+    const parsed = parsePositiveInteger(value);
+    if (parsed === null) {
+      return fallbackValue;
+    }
+    return allowedValues.includes(parsed) ? parsed : fallbackValue;
+  }
+
+  function parseBoundedInteger(value, min, max, fallbackValue) {
+    const parsed = parsePositiveInteger(value);
+    if (parsed === null) {
+      return fallbackValue;
+    }
+    return clamp(parsed, min, max);
   }
 
   function cloneTrialSet(trialSet) {
@@ -330,9 +425,14 @@
     return String(value || "").trim();
   }
 
-  function computeSafeNumerosityMax(config) {
-    const jointWidth = (config.ui.numerosityCanvasWidth - 70 * 2 - 72) / 2;
-    const jointHeight = (config.ui.numerosityCanvasHeight - 70 * 2 - 72) / 2;
+  function computeSafeNumerosityMax(config, arrayCount) {
+    const grid = getNumerosityGridDimensions(arrayCount || DEFAULT_NUMEROSITY_ARRAY_COUNT);
+    const margin = 70;
+    const gap = 72;
+    const jointWidth =
+      (config.ui.numerosityCanvasWidth - margin * 2 - gap * (grid.columns - 1)) / grid.columns;
+    const jointHeight =
+      (config.ui.numerosityCanvasHeight - margin * 2 - gap * (grid.rows - 1)) / grid.rows;
     const usableWidth = jointWidth - 48;
     const usableHeight = jointHeight - 82 - 24;
     const squareCap = Math.floor(Math.min(usableWidth, usableHeight) / NUMEROSITY_RANGE_CELL_PX);
@@ -348,24 +448,37 @@
     return config;
   }
 
-  function rescaleNumerosityTrialSets(trialSets, targetMin, targetMax) {
+  function rescaleNumerosityTrialSets(trialSets, targetMin, targetMax, desiredArrayCount) {
+    const labelSet = getLabelSet(desiredArrayCount || DEFAULT_NUMEROSITY_ARRAY_COUNT);
     const originalValues = trialSets.flatMap((trialSet) =>
       trialSet.arrays.map((arrayDef) => Number(arrayDef.numerosity))
     );
     const originalMin = Math.min(...originalValues);
     const originalMax = Math.max(...originalValues);
-    if (targetMin <= originalMin && targetMax >= originalMax) {
-      return trialSets.map(cloneTrialSet);
-    }
     const span = Math.max(1, originalMax - originalMin);
     return trialSets.map((trialSet) => {
       const nextTrialSet = cloneTrialSet(trialSet);
-      nextTrialSet.arrays = nextTrialSet.arrays.map((arrayDef) => {
-        const ratio = (Number(arrayDef.numerosity) - originalMin) / span;
+      const interpolatedSourceValues = interpolateNumericSeries(
+        nextTrialSet.arrays.map((arrayDef) => Number(arrayDef.numerosity)),
+        labelSet.length
+      );
+      nextTrialSet.arrays = labelSet.map((label, index) => {
+        const template = nextTrialSet.arrays[index % nextTrialSet.arrays.length];
+        const ratio = (interpolatedSourceValues[index] - originalMin) / span;
         const scaled = targetMin + ratio * (targetMax - targetMin);
+        const numerosity =
+          labelSet.length === 1
+            ? targetMin
+            : index === 0
+              ? targetMin
+              : index === labelSet.length - 1
+                ? targetMax
+                : clamp(Math.round(scaled), targetMin, targetMax);
         return {
-          ...arrayDef,
-          numerosity: clamp(Math.round(scaled), targetMin, targetMax)
+          ...template,
+          label,
+          numerosity,
+          seed: Number(template.seed) + index * 1000
         };
       });
       return nextTrialSet;
@@ -479,10 +592,12 @@
       if (!trialSet || typeof trialSet !== "object") {
         throw new Error(`${pathLabel}[${index}] must be an object`);
       }
-      if (!Array.isArray(trialSet.arrays) || trialSet.arrays.length !== 4) {
-        throw new Error(`${pathLabel}[${index}] must contain exactly 4 arrays`);
+      if (!Array.isArray(trialSet.arrays) || !SUPPORTED_NUMEROSITY_ARRAY_COUNTS.includes(trialSet.arrays.length)) {
+        throw new Error(
+          `${pathLabel}[${index}] must contain ${SUPPORTED_NUMEROSITY_ARRAY_COUNTS.join(", ")} arrays`
+        );
       }
-      ensureLabels(trialSet.arrays, ["A", "B", "C", "D"]);
+      ensureLabels(trialSet.arrays, getLabelSet(trialSet.arrays.length));
       trialSet.arrays.forEach((arrayDef, arrayIndex) => {
         ["numerosity", "setType", "seed"].forEach((field) => {
           if (arrayDef[field] === undefined || arrayDef[field] === null || arrayDef[field] === "") {
@@ -494,7 +609,7 @@
   }
 
   function sumProportions(trial) {
-    return ["A", "B", "C", "D", "E"].reduce((sum, key) => sum + Number(trial[key] || 0), 0);
+    return inferTrialLabels(trial).reduce((sum, key) => sum + Number(trial[key] || 0), 0);
   }
 
   function validateProportionTrialList(trials, pathLabel) {
@@ -517,7 +632,8 @@
       if (!["joint", "separate"].includes(trial.format)) {
         throw new Error(`${pathLabel}[${index}] has invalid format ${trial.format}`);
       }
-      if (!["A", "B", "C", "D", "E"].includes(trial.target_label)) {
+      const labels = inferTrialLabels(trial);
+      if (!labels.includes(trial.target_label)) {
         throw new Error(`${pathLabel}[${index}] has invalid target_label ${trial.target_label}`);
       }
     });
@@ -660,49 +776,6 @@
       await waitForButton(button);
     }
 
-    async showParticipantSetup(participantIdDefault) {
-      const screen = this.createScreen();
-      const panel = document.createElement("div");
-      panel.className = "panel";
-      panel.innerHTML = `
-        <h1>Participant Setup</h1>
-        <p>Enter a participant ID if one was not provided by Qualtrics or the launch URL.</p>
-      `;
-      const row = document.createElement("div");
-      row.className = "input-row";
-      const input = document.createElement("input");
-      input.type = "text";
-      input.value = participantIdDefault || "";
-      input.placeholder = "Participant ID";
-      const button = document.createElement("button");
-      button.textContent = "Continue";
-      const error = document.createElement("div");
-      error.className = "error";
-      row.appendChild(input);
-      row.appendChild(button);
-      panel.appendChild(row);
-      panel.appendChild(error);
-      screen.appendChild(panel);
-      this.render(screen);
-      input.focus();
-      return new Promise((resolve) => {
-        const submit = () => {
-          const value = normalizeParticipantId(input.value);
-          if (!value) {
-            error.textContent = "Please enter a participant ID.";
-            return;
-          }
-          resolve(value);
-        };
-        button.addEventListener("click", submit);
-        input.addEventListener("keydown", (event) => {
-          if (event.key === "Enter") {
-            submit();
-          }
-        });
-      });
-    }
-
     async showEndScreen(title, message, onDownload) {
       const screen = this.createScreen();
       const panel = document.createElement("div");
@@ -819,6 +892,7 @@
       const screen = this.screenManager.createScreen("screen");
       const stage = document.createElement("div");
       stage.className = `bar-stage ${options.format === "joint" ? "bar-stage--joint" : "bar-stage--separate"}`;
+      const labels = inferTrialLabels(trial, options.boxCount || DEFAULT_PROPORTION_BOX_COUNT);
       const heading = document.createElement("div");
       heading.className = "bar-heading";
       const title = document.createElement("h2");
@@ -826,9 +900,12 @@
         ? this.config.taskSettings.proportion.jointPrompt
         : this.config.taskSettings.proportion.separatePrompt;
       const helper = document.createElement("p");
-      helper.textContent = options.format === "joint"
-        ? this.config.taskSettings.proportion.jointHelperText
-        : this.config.taskSettings.proportion.separateHelperText;
+      helper.textContent =
+        options.format === "joint"
+          ? labels.length <= 5
+            ? this.config.taskSettings.proportion.jointHelperText
+            : `Enter percentages for ${labels[0]} through ${labels[labels.length - 1]}. Use your best visual estimate. Decimals are allowed.`
+          : this.config.taskSettings.proportion.separateHelperText;
       heading.appendChild(title);
       heading.appendChild(helper);
       const svg = createSvgElement("svg", {
@@ -837,9 +914,12 @@
         role: "img"
       });
 
-      const palette = this.config.taskSettings.proportion.useGrayscale
-        ? this.config.taskSettings.proportion.grayscalePalette
-        : this.config.taskSettings.proportion.colorPalette;
+      const palette = createPaletteLookup(
+        this.config.taskSettings.proportion.useGrayscale
+          ? this.config.taskSettings.proportion.grayscalePalette
+          : this.config.taskSettings.proportion.colorPalette,
+        labels
+      );
 
       const totalWidth = this.config.ui.proportionSvgWidth - 180;
       const x0 = 90;
@@ -847,11 +927,13 @@
       const height = options.format === "joint" ? 78 : 68;
       const targetLabel = trial.target_label;
       const showLabels = options.format === "joint" || options.showTargetLabelInSeparate;
+      const labelFontSize = labels.length >= 9 ? 20 : labels.length >= 7 ? 24 : 32;
+      const labelBoxSize = labels.length >= 9 ? 14 : 18;
 
       if (options.format === "joint") {
         let cursor = x0;
         const centers = {};
-        ["A", "B", "C", "D", "E"].forEach((label) => {
+        labels.forEach((label) => {
           const width = totalWidth * Number(trial[label]);
           createSvgElement("rect", {
             x: cursor,
@@ -875,7 +957,7 @@
           "stroke-width": 1.5
         }, svg);
 
-        const jointLabels = ["A", "B", "C", "D", "E"];
+        const jointLabels = labels;
         const slotGap = totalWidth / (jointLabels.length - 1);
         const slotAnchors = jointLabels.reduce((map, label, index) => {
           map[label] = x0 + slotGap * index;
@@ -912,10 +994,10 @@
           }, svg);
           if (showLabels) {
             createSvgElement("rect", {
-              x: labelX - 18,
-              y: topY - 18,
-              width: 18,
-              height: 18,
+              x: labelX - labelBoxSize,
+              y: topY - labelBoxSize,
+              width: labelBoxSize,
+              height: labelBoxSize,
               fill: palette[label] || "#DDDDDD",
               stroke: "#8A94A6",
               "stroke-width": 1.2
@@ -925,7 +1007,7 @@
               y: topY - 2,
               "text-anchor": "start",
               fill: "#2A3240",
-              "font-size": 32,
+              "font-size": labelFontSize,
               "font-family": "Segoe UI, sans-serif",
               "font-weight": "600"
             }, svg);
@@ -1453,7 +1535,7 @@
           }
           const total = labels.reduce((sum, label) => sum + responses[label], 0);
           if (settings.requireTotal100 !== false && Math.abs(total - 100) > 0.5) {
-            error.textContent = "Please make the five percentages total 100.";
+            error.textContent = "Please make the percentages total 100.";
             return;
           }
           const responseTime = performance.now();
@@ -1571,18 +1653,29 @@
       };
     }
 
-    createRegion(condition, label) {
+    createRegion(condition, label, arrayCount) {
       if (condition.startsWith("joint")) {
         const margin = 70;
         const gap = 72;
-        const width = (this.canvasWidth - margin * 2 - gap) / 2;
-        const height = (this.canvasHeight - margin * 2 - gap) / 2;
-        const slots = {
-          A: { x: margin, y: margin, width, height, labelReservedTop: 82 },
-          B: { x: margin + width + gap, y: margin, width, height, labelReservedTop: 82 },
-          C: { x: margin, y: margin + height + gap, width, height, labelReservedTop: 82 },
-          D: { x: margin + width + gap, y: margin + height + gap, width, height, labelReservedTop: 82 }
-        };
+        const count = arrayCount || DEFAULT_NUMEROSITY_ARRAY_COUNT;
+        const grid = getNumerosityGridDimensions(count);
+        const labels = getLabelSet(count);
+        const width =
+          (this.canvasWidth - margin * 2 - gap * (grid.columns - 1)) / grid.columns;
+        const height =
+          (this.canvasHeight - margin * 2 - gap * (grid.rows - 1)) / grid.rows;
+        const slots = {};
+        labels.forEach((slotLabel, index) => {
+          const column = index % grid.columns;
+          const row = Math.floor(index / grid.columns);
+          slots[slotLabel] = {
+            x: margin + column * (width + gap),
+            y: margin + row * (height + gap),
+            width,
+            height,
+            labelReservedTop: 82
+          };
+        });
         return slots[label];
       }
       return {
@@ -1599,79 +1692,207 @@
       this.config = config;
     }
 
-    buildTrialPool() {
-      const explicitTrials = this.config.taskSettings.proportion.trialList || [];
-      const generated = this.generateProceduralTrials();
+    buildTrialPool(options) {
+      const settings = options || {};
+      const explicitTrials = (this.config.taskSettings.proportion.trialList || [])
+        .filter((trial) => {
+          const format = trial.format || "separate";
+          const desiredCount =
+            format === "joint"
+              ? settings.boxCount || DEFAULT_PROPORTION_BOX_COUNT
+              : DEFAULT_PROPORTION_BOX_COUNT;
+          return inferTrialLabels(trial, desiredCount).length === desiredCount;
+        })
+        .map((trial) => ({
+          ...trial,
+          labels: inferTrialLabels(
+            trial,
+            trial.format === "joint"
+              ? settings.boxCount || DEFAULT_PROPORTION_BOX_COUNT
+              : DEFAULT_PROPORTION_BOX_COUNT
+          )
+        }));
+      const generated = this.generateProceduralTrials({
+        boxCount: settings.boxCount || DEFAULT_PROPORTION_BOX_COUNT,
+        taskKey: settings.taskKey
+      });
       return [...explicitTrials, ...generated];
     }
 
-    generateProceduralTrials() {
+    generateProceduralTrials(options) {
       const generator = this.config.taskSettings.proportion.proceduralGenerator;
       if (!generator) {
         return [];
       }
       const rng = createSeededRng(generator.seed || 1);
-      const labels = ["A", "B", "C", "D", "E"];
       const formats = generator.formats || ["joint", "separate"];
-      const targetBins = generator.targetBins || [
-        [0.05, 0.15],
-        [0.16, 0.3],
-        [0.31, 0.45]
-      ];
-      const minChunk = generator.minChunk || 0.05;
-      const maxChunk = generator.maxChunk || 0.55;
-      const trialsPerBin = generator.trialsPerBin || 2;
       const output = [];
       const fingerprints = new Set();
-      let trialIndex = 0;
-
       formats.forEach((format) => {
-        targetBins.forEach((bin, binIndex) => {
-          labels.forEach((targetLabel, labelIndex) => {
-            for (let repeat = 0; repeat < trialsPerBin; repeat += 1) {
-              let safety = 0;
-              while (safety < 500) {
-                safety += 1;
-                const target = round(bin[0] + (bin[1] - bin[0]) * rng(), 3);
-                const remainder = round(1 - target, 3);
-                const otherLabels = labels.filter((label) => label !== targetLabel);
-                const raw = otherLabels.map(() => rng());
-                const rawSum = raw.reduce((sum, value) => sum + value, 0);
-                const scaled = raw.map((value) => round((value / rawSum) * remainder, 3));
-                const corrected = scaled.slice();
-                const scaledSum = corrected.reduce((sum, value) => sum + value, 0);
-                corrected[corrected.length - 1] = round(corrected[corrected.length - 1] + (remainder - scaledSum), 3);
-                if (corrected.some((value) => value < minChunk || value > maxChunk)) {
-                  continue;
-                }
-                const trial = {
-                  trial_id: `proc_${format}_${binIndex}_${labelIndex}_${repeat}_${trialIndex}`,
-                  stimulus_id: `proc_${format}_${binIndex}_${labelIndex}`,
-                  block: null,
-                  format,
-                  target_label: targetLabel
-                };
-                trial[targetLabel] = target;
-                otherLabels.forEach((label, index) => {
-                  trial[label] = corrected[index];
-                });
-                const fingerprint = labels.map((label) => `${label}:${trial[label]}`).join("|");
-                if (fingerprints.has(fingerprint)) {
-                  continue;
-                }
-                if (Math.abs(sumProportions(trial) - 1) > 0.0001) {
-                  continue;
-                }
-                fingerprints.add(fingerprint);
-                output.push(trial);
-                trialIndex += 1;
-                break;
-              }
-            }
-          });
+        const labels =
+          format === "joint"
+            ? getLabelSet(options.boxCount || DEFAULT_PROPORTION_BOX_COUNT)
+            : getLabelSet(DEFAULT_PROPORTION_BOX_COUNT);
+        const nextTrials =
+          format === "separate"
+            ? this.generateExtremeSeparateTrials(labels, generator, rng)
+            : this.generateSkewedJointTrials(labels, generator, rng);
+        nextTrials.forEach((trial) => {
+          const fingerprint = labels.map((label) => `${label}:${round(trial[label], 4)}`).join("|");
+          if (!fingerprints.has(fingerprint) && Math.abs(sumProportions(trial) - 1) <= 0.0001) {
+            fingerprints.add(fingerprint);
+            output.push(trial);
+          }
         });
       });
       return output;
+    }
+
+    generateExtremeSeparateTrials(labels, generator, rng) {
+      const edgeBands = generator.edgeBands || [
+        [PROPORTION_VISIBLE_MIN, 0.01],
+        [0.01, 0.03],
+        [0.03, 0.08],
+        [0.08, 0.2],
+        [0.2, 0.8],
+        [0.8, 0.92],
+        [0.92, 0.97],
+        [0.97, 0.99],
+        [0.99, PROPORTION_VISIBLE_MAX]
+      ];
+      const edgeWeights = generator.edgeWeights || [7, 6, 5, 3, 1, 3, 5, 6, 7];
+      const repeatsPerLabel = generator.trialsPerBin || 2;
+      const output = [];
+      labels.forEach((targetLabel) => {
+        edgeBands.forEach((band, bandIndex) => {
+          for (let repeat = 0; repeat < repeatsPerLabel; repeat += 1) {
+            const target = round(band[0] + (band[1] - band[0]) * rng(), 4);
+            const remainder = round(1 - target, 4);
+            const otherLabels = labels.filter((label) => label !== targetLabel);
+            const shares = this.sampleRemainderShares(otherLabels.length, remainder, rng, 0.0025, 0.75);
+            const trial = {
+              trial_id: `proc_sep_${targetLabel}_${bandIndex}_${repeat}_${output.length + 1}`,
+              stimulus_id: `proc_sep_${targetLabel}_${bandIndex}`,
+              block: null,
+              format: "separate",
+              labels: labels.slice(),
+              target_label: targetLabel,
+              random_seed: hashString(`${targetLabel}-${bandIndex}-${repeat}-${target}`)
+            };
+            trial[targetLabel] = target;
+            otherLabels.forEach((label, index) => {
+              trial[label] = shares[index];
+            });
+            const weight = edgeWeights[bandIndex] || 1;
+            for (let copy = 0; copy < weight; copy += 1) {
+              output.push({ ...trial, trial_id: `${trial.trial_id}_W${copy + 1}` });
+            }
+          }
+        });
+      });
+      return output;
+    }
+
+    generateSkewedJointTrials(labels, generator, rng) {
+      const profiles = generator.skewProfiles || [
+        { dominantRange: [0.78, 0.9], tinyRange: [0.0025, 0.01], weight: 8 },
+        { dominantRange: [0.68, 0.8], tinyRange: [0.005, 0.02], weight: 5 },
+        { dominantRange: [0.55, 0.68], tinyRange: [0.01, 0.04], weight: 2 }
+      ];
+      const output = [];
+      profiles.forEach((profile, profileIndex) => {
+        const repeats = profile.weight || 1;
+        for (let repeat = 0; repeat < repeats; repeat += 1) {
+          const dominantLabel = labels[Math.floor(rng() * labels.length)];
+          const dominant = round(
+            profile.dominantRange[0] + (profile.dominantRange[1] - profile.dominantRange[0]) * rng(),
+            4
+          );
+          const otherLabels = labels.filter((label) => label !== dominantLabel);
+          const tinyCount = Math.min(
+            otherLabels.length - 1,
+            Math.max(1, Math.floor(rng() * Math.min(3, otherLabels.length)))
+          );
+          const tinyLabels = shuffleWithRng(otherLabels, rng).slice(0, tinyCount);
+          const mediumLabels = otherLabels.filter((label) => !tinyLabels.includes(label));
+          const tinyValues = tinyLabels.map(() =>
+            round(profile.tinyRange[0] + (profile.tinyRange[1] - profile.tinyRange[0]) * rng(), 4)
+          );
+          const tinyTotal = tinyValues.reduce((sum, value) => sum + value, 0);
+          const remainder = round(1 - dominant - tinyTotal, 4);
+          if (remainder <= 0.02) {
+            continue;
+          }
+          const mediumShares = this.sampleRemainderShares(
+            Math.max(1, mediumLabels.length),
+            remainder,
+            rng,
+            0.01,
+            0.8
+          );
+          const trial = {
+            trial_id: `proc_joint_${profileIndex}_${repeat}_${output.length + 1}`,
+            stimulus_id: `proc_joint_${profileIndex}`,
+            block: null,
+            format: "joint",
+            labels: labels.slice(),
+            target_label: dominantLabel,
+            random_seed: hashString(`${dominantLabel}-${profileIndex}-${repeat}-${dominant}`)
+          };
+          labels.forEach((label) => {
+            trial[label] = 0;
+          });
+          trial[dominantLabel] = dominant;
+          tinyLabels.forEach((label, index) => {
+            trial[label] = tinyValues[index];
+          });
+          mediumLabels.forEach((label, index) => {
+            trial[label] = mediumShares[index] || 0;
+          });
+          const normalized = this.normalizeTrialShares(labels, trial);
+          output.push(normalized);
+        }
+      });
+      return output;
+    }
+
+    sampleRemainderShares(count, total, rng, minValue, maxValue) {
+      if (count <= 0) {
+        return [];
+      }
+      if (count === 1) {
+        return [round(total, 4)];
+      }
+      let values = new Array(count).fill(0);
+      let safety = 0;
+      while (safety < 300) {
+        safety += 1;
+        const raw = values.map(() => Math.pow(rng(), 0.55));
+        const rawSum = raw.reduce((sum, value) => sum + value, 0);
+        values = raw.map((value) => round((value / rawSum) * total, 4));
+        const currentSum = values.reduce((sum, value) => sum + value, 0);
+        values[values.length - 1] = round(values[values.length - 1] + (total - currentSum), 4);
+        if (values.every((value) => value >= minValue && value <= maxValue)) {
+          break;
+        }
+      }
+      return values;
+    }
+
+    normalizeTrialShares(labels, trial) {
+      const values = labels.map((label) => clamp(Number(trial[label] || 0), 0, 1));
+      const sum = values.reduce((accumulator, value) => accumulator + value, 0) || 1;
+      const normalized = values.map((value) => round(value / sum, 4));
+      const correctedSum = normalized.reduce((accumulator, value) => accumulator + value, 0);
+      normalized[normalized.length - 1] = round(
+        normalized[normalized.length - 1] + (1 - correctedSum),
+        4
+      );
+      const nextTrial = { ...trial };
+      labels.forEach((label, index) => {
+        nextTrial[label] = normalized[index];
+      });
+      return nextTrial;
     }
   }
 
@@ -1693,7 +1914,6 @@
       this.proportionRenderer = new ProportionRenderer(this.screenManager, this.config);
       this.numerosityStimulusGenerator = new NumerosityStimulusGenerator(this.config);
       this.proportionTrialFactory = new ProportionTrialFactory(this.config);
-      this.safeNumerosityMax = computeSafeNumerosityMax(this.config);
       this.participantId = normalizeParticipantId(
         participantId ||
           this.embeddedAssignments.participantId ||
@@ -1720,6 +1940,25 @@
         parsePositiveInteger(this.embeddedAssignments.number_of_trials) ||
         parsePositiveInteger(this.queryParams.number_of_trials) ||
         (this.isQualtricsRuntime ? DEFAULT_QUALTRICS_TRIALS : null);
+      this.requestedNumerosityArrayCount = parseChoiceInteger(
+        this.embeddedAssignments.numberOfArrays ||
+          this.embeddedAssignments.number_of_arrays ||
+          this.queryParams.number_of_arrays,
+        SUPPORTED_NUMEROSITY_ARRAY_COUNTS,
+        DEFAULT_NUMEROSITY_ARRAY_COUNT
+      );
+      this.requestedProportionBoxCount = parseBoundedInteger(
+        this.embeddedAssignments.numberOfBoxes ||
+          this.embeddedAssignments.number_of_boxes ||
+          this.queryParams.number_of_boxes,
+        PROPORTION_BOX_COUNT_MIN,
+        PROPORTION_BOX_COUNT_MAX,
+        DEFAULT_PROPORTION_BOX_COUNT
+      );
+      this.safeNumerosityMax = computeSafeNumerosityMax(
+        this.config,
+        this.requestedNumerosityArrayCount
+      );
       this.requestedNumerosityRange = parseRangeOverride(
         this.embeddedAssignments.numerosityRange ||
           this.embeddedAssignments.numerosity_range ||
@@ -1744,13 +1983,18 @@
       this.logger.metadata.qualtrics_overrides = {
         task: this.embeddedAssignments.task || this.queryParams.task || null,
         number_of_trials: this.requestedTrialCount,
+        number_of_arrays: this.requestedNumerosityArrayCount,
+        number_of_boxes: this.requestedProportionBoxCount,
         numerosity_range_min: this.requestedNumerosityRange.min,
         numerosity_range_max: this.requestedNumerosityRange.max,
         numerosity_range_safe_max: this.safeNumerosityMax,
         brief_display_ms: this.requestedBriefDisplayMs || this.config.timing.briefDisplayMs
       };
       this.globalTrialIndex = 0;
-      this.proportionTrialPool = this.proportionTrialFactory.buildTrialPool();
+      this.proportionTrialPool = this.proportionTrialFactory.buildTrialPool({
+        boxCount: this.requestedProportionBoxCount,
+        taskKey: this.embeddedAssignments.task || this.queryParams.task || null
+      });
     }
 
     async run() {
@@ -1758,11 +2002,6 @@
         this.participantId = this.sessionId;
         this.logger.sessionInfo.participantId = this.participantId;
       }
-      // Participant entry is intentionally disabled for now so Qualtrics owns identity handling.
-      // else if (!this.participantId && this.config.ui.allowParticipantIdEntry) {
-      //   this.participantId = await this.screenManager.showParticipantSetup("");
-      //   this.logger.sessionInfo.participantId = this.participantId;
-      // }
       await this.showInstructions();
       const blocks = this.resolveBlocks();
       for (let index = 0; index < blocks.length; index += 1) {
@@ -1863,7 +2102,7 @@
         return block.maxTrials;
       }
       if (this.requestedTrialCount) {
-        return Math.max(1, Math.ceil(this.requestedTrialCount / 4));
+        return Math.max(1, Math.ceil(this.requestedTrialCount / this.requestedNumerosityArrayCount));
       }
       return null;
     }
@@ -1900,7 +2139,8 @@
       trialSets = rescaleNumerosityTrialSets(
         trialSets,
         this.requestedNumerosityRange.min,
-        this.requestedNumerosityRange.max
+        this.requestedNumerosityRange.max,
+        this.requestedNumerosityArrayCount
       );
       const desiredTrialSetCount = this.getDesiredNumerosityTrialSetCount(block);
       if (desiredTrialSetCount) {
@@ -1939,7 +2179,11 @@
     async runSeparateNumerosityTrialSet(context) {
       for (let subtrialIndex = 0; subtrialIndex < context.trialSet.arrays.length; subtrialIndex += 1) {
         const arrayDef = context.trialSet.arrays[subtrialIndex];
-        const region = this.numerosityStimulusGenerator.createRegion(context.condition, arrayDef.label);
+        const region = this.numerosityStimulusGenerator.createRegion(
+          context.condition,
+          arrayDef.label,
+          context.trialSet.arrays.length
+        );
         const stimulus = this.numerosityStimulusGenerator.generateArray(arrayDef, region);
         const trialStartTime = nowIso();
         await this.screenManager.showMessage(this.config.taskSettings.numerosity.readyText, this.config.timing.readyMs);
@@ -1982,6 +2226,7 @@
             timeout: false,
             evaluation_mode: context.evaluationMode,
             availability_mode: context.availabilityMode,
+            number_of_arrays: context.trialSet.arrays.length,
             trialSetId: context.trialSet.trialSetId,
             array_label: arrayDef.label,
             numerosity_true_value: arrayDef.numerosity,
@@ -2022,6 +2267,7 @@
           timeout: false,
           evaluation_mode: context.evaluationMode,
           availability_mode: context.availabilityMode,
+          number_of_arrays: context.trialSet.arrays.length,
           trialSetId: context.trialSet.trialSetId,
           array_label: arrayDef.label,
           numerosity_true_value: arrayDef.numerosity,
@@ -2041,7 +2287,11 @@
 
     async runJointNumerosityTrialSet(context) {
       const stimuli = context.trialSet.arrays.map((arrayDef) => {
-        const region = this.numerosityStimulusGenerator.createRegion(context.condition, arrayDef.label);
+        const region = this.numerosityStimulusGenerator.createRegion(
+          context.condition,
+          arrayDef.label,
+          context.trialSet.arrays.length
+        );
         return this.numerosityStimulusGenerator.generateArray(arrayDef, region);
       });
       const trialStartTime = nowIso();
@@ -2064,7 +2314,7 @@
         stimulusOnsetTime = performance.now();
         const responseInfo = await this.responseManager.collectJointIntegerResponsesEmbedded(
           view.stage,
-          ["A", "B", "C", "D"],
+          context.trialSet.arrays.map((arrayDef) => arrayDef.label),
           this.config.taskSettings.numerosity.promptJoint
         );
         displayOffsetTime = responseInfo.responseTime;
@@ -2087,6 +2337,7 @@
             timeout: false,
             evaluation_mode: context.evaluationMode,
             availability_mode: context.availabilityMode,
+            number_of_arrays: context.trialSet.arrays.length,
             trialSetId: context.trialSet.trialSetId,
             array_label: arrayDef.label,
             numerosity_true_value: arrayDef.numerosity,
@@ -2105,7 +2356,7 @@
         return;
       }
       const responseInfo = await this.responseManager.collectJointIntegerResponses(
-        ["A", "B", "C", "D"],
+        context.trialSet.arrays.map((arrayDef) => arrayDef.label),
         this.config.taskSettings.numerosity.promptJoint
       );
       if (context.availabilityMode === "visible") {
@@ -2130,6 +2381,7 @@
           timeout: false,
           evaluation_mode: context.evaluationMode,
           availability_mode: context.availabilityMode,
+          number_of_arrays: context.trialSet.arrays.length,
           trialSetId: context.trialSet.trialSetId,
           array_label: arrayDef.label,
           numerosity_true_value: arrayDef.numerosity,
@@ -2157,25 +2409,31 @@
     async runSingleProportionTrial({ block, blockIndex, trial }) {
       const startTime = nowIso();
       const format = block.format || trial.format;
+      const labels = inferTrialLabels(
+        trial,
+        format === "joint" ? this.requestedProportionBoxCount : DEFAULT_PROPORTION_BOX_COUNT
+      );
+      const labelValueFields = buildLabelValueFields(labels, trial, true);
       if (this.config.timing.fixationEnabled && this.config.timing.fixationMs > 0) {
         await this.screenManager.showMessage("+", this.config.timing.fixationMs, "fixation");
       }
       const view = this.proportionRenderer.renderTrial(trial, {
         format,
-        showTargetLabelInSeparate: this.config.taskSettings.proportion.showTargetLabelInSeparate
+        showTargetLabelInSeparate: this.config.taskSettings.proportion.showTargetLabelInSeparate,
+        boxCount: labels.length
       });
       const stimulusOnset = performance.now();
       if (format === "joint") {
         const responseInfo = await this.responseManager.collectJointPercentageResponsesEmbedded(
           view.stage,
-          ["A", "B", "C", "D", "E"],
+          labels,
           "",
           {
             showTotalBox: this.config.taskSettings.proportion.showJointTotalBox,
             requireTotal100: this.config.taskSettings.proportion.requireJointTotal100
           }
         );
-        ["A", "B", "C", "D", "E"].forEach((label) => {
+        labels.forEach((label) => {
           const targetValue = Number(trial[label]);
           this.logger.log({
             ...getEnvironmentSnapshot(),
@@ -2194,12 +2452,9 @@
             timeout: false,
             format,
             judgment_type: "estimate",
+            number_of_boxes: labels.length,
             target_label: label,
-            A: trial.A,
-            B: trial.B,
-            C: trial.C,
-            D: trial.D,
-            E: trial.E,
+            ...labelValueFields,
             target_true_proportion: targetValue,
             displayed_target_value: round(targetValue * 100, 2),
             response: responseInfo.responses[label],
@@ -2232,12 +2487,9 @@
           timeout: false,
           format,
           judgment_type: "estimate",
+          number_of_boxes: labels.length,
           target_label: trial.target_label,
-          A: trial.A,
-          B: trial.B,
-          C: trial.C,
-          D: trial.D,
-          E: trial.E,
+          ...labelValueFields,
           target_true_proportion: targetValue,
           displayed_target_value: round(targetValue * 100, 2),
           response: responseInfo.response,

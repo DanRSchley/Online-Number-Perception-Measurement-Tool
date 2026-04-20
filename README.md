@@ -134,12 +134,16 @@ script.src = "https://cdn.jsdelivr.net/gh/DanRSchley/Online-Number-Perception-Me
 ```
 8. Survey Flow can also control:
    - `number_of_trials`
+   - `number_of_arrays`
+   - `number_of_boxes`
    - `numerosity_range`
    - `brief_display_ms`
 
 Behavior of the extra Qualtrics fields:
 
 - `number_of_trials`: default is `40` in Qualtrics if not supplied. This is a conservative online default based on common 40-64 trial counts in numerical-cognition tasks.
+- `number_of_arrays`: numerosity-only control. Allowed values are `2`, `4`, `6`, and `9`. Joint numerosity layouts become `2x1`, `2x2`, `3x2`, or `3x3` accordingly.
+- `number_of_boxes`: joint-proportion-only control. Allowed values are `2` through `10`, with default `5`. The renderer shrinks the label treatment automatically as the number of categories increases.
 - `numerosity_range`: accepts either a single maximum such as `40` or an explicit range such as `20-40`. A single value means `4` through that maximum. The app clamps the range to a safe upper limit of `144` for the joint-visible dot layout.
 - `brief_display_ms`: overrides the brief dot-presentation duration for `separate_brief` and `joint_brief`.
 

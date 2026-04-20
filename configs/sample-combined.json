@@ -109,51 +109,27 @@
     },
     "proportion": {
       "responseMethod": "numeric",
-      "trialList": [
-        {
-          "trial_id": "PJ001",
-          "stimulus_id": "BAR001",
-          "format": "joint",
-          "target_label": "C",
-          "A": 0.1,
-          "B": 0.15,
-          "C": 0.25,
-          "D": 0.2,
-          "E": 0.3
-        },
-        {
-          "trial_id": "PJ002",
-          "stimulus_id": "BAR002",
-          "format": "joint",
-          "target_label": "A",
-          "A": 0.08,
-          "B": 0.2,
-          "C": 0.24,
-          "D": 0.18,
-          "E": 0.3
-        },
-        {
-          "trial_id": "PJ003",
-          "stimulus_id": "BAR003",
-          "format": "separate",
-          "target_label": "E",
-          "A": 0.14,
-          "B": 0.16,
-          "C": 0.2,
-          "D": 0.22,
-          "E": 0.28
-        }
-      ],
+      "trialList": [],
       "proceduralGenerator": {
         "seed": 9090,
         "formats": ["joint", "separate"],
         "trialsPerBin": 1,
-        "minChunk": 0.06,
-        "maxChunk": 0.45,
-        "targetBins": [
-          [0.08, 0.16],
-          [0.18, 0.3],
-          [0.32, 0.44]
+        "edgeBands": [
+          [0.0025, 0.01],
+          [0.01, 0.03],
+          [0.03, 0.08],
+          [0.08, 0.2],
+          [0.2, 0.8],
+          [0.8, 0.92],
+          [0.92, 0.97],
+          [0.97, 0.99],
+          [0.99, 0.9975]
+        ],
+        "edgeWeights": [8, 6, 5, 3, 1, 3, 5, 6, 8],
+        "skewProfiles": [
+          { "dominantRange": [0.78, 0.9], "tinyRange": [0.0025, 0.01], "weight": 8 },
+          { "dominantRange": [0.68, 0.8], "tinyRange": [0.005, 0.02], "weight": 5 },
+          { "dominantRange": [0.55, 0.68], "tinyRange": [0.01, 0.04], "weight": 2 }
         ]
       }
     }

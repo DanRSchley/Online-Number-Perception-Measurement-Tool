@@ -37,40 +37,14 @@
       "showJointTotalBox": false,
       "requireJointTotal100": false,
       "jointHelperText": "Enter percentages for A through E. Use your best visual estimate. Decimals are allowed.",
-      "trialList": [
-        {
-          "trial_id": "PT001",
-          "stimulus_id": "BAR001",
-          "format": "joint",
-          "target_label": "B",
-          "A": 0.1,
-          "B": 0.15,
-          "C": 0.25,
-          "D": 0.2,
-          "E": 0.3
-        },
-        {
-          "trial_id": "PT002",
-          "stimulus_id": "BAR002",
-          "format": "joint",
-          "target_label": "D",
-          "A": 0.12,
-          "B": 0.17,
-          "C": 0.19,
-          "D": 0.22,
-          "E": 0.3
-        }
-      ],
+      "trialList": [],
       "proceduralGenerator": {
         "seed": 5555,
         "formats": ["joint"],
-        "trialsPerBin": 1,
-        "minChunk": 0.06,
-        "maxChunk": 0.44,
-        "targetBins": [
-          [0.08, 0.14],
-          [0.18, 0.28],
-          [0.32, 0.42]
+        "skewProfiles": [
+          { "dominantRange": [0.78, 0.9], "tinyRange": [0.0025, 0.01], "weight": 8 },
+          { "dominantRange": [0.68, 0.8], "tinyRange": [0.005, 0.02], "weight": 5 },
+          { "dominantRange": [0.55, 0.68], "tinyRange": [0.01, 0.04], "weight": 2 }
         ]
       }
     }

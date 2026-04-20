@@ -2,7 +2,7 @@
    Paste inside Qualtrics question JavaScript and host app files where Qualtrics can reach them. */
 
 Qualtrics.SurveyEngine.addOnload(function () {
-  var assetVersion = "20260420e";
+  var assetVersion = "20260420g";
   var assetBase = "https://cdn.jsdelivr.net/gh/DanRSchley/Online-Number-Perception-Measurement-Tool@main/";
   var q = this;
   var container = document.createElement("div");
@@ -44,6 +44,8 @@ Qualtrics.SurveyEngine.addOnload(function () {
     counterbalancingAssignment: "${e://Field/counterbalance_assignment}",
     task: "${e://Field/task}",
     numberOfTrials: "${e://Field/number_of_trials}",
+    numberOfArrays: "${e://Field/number_of_arrays}",
+    numberOfBoxes: "${e://Field/number_of_boxes}",
     numerosityRange: "${e://Field/numerosity_range}",
     briefDisplayMs: "${e://Field/brief_display_ms}"
   };
