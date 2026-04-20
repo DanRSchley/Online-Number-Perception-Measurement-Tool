@@ -2,8 +2,8 @@
    Paste inside Qualtrics question JavaScript and host app files where Qualtrics can reach them. */
 
 Qualtrics.SurveyEngine.addOnload(function () {
-  var assetVersion = "20260420h";
-  var assetBase = "https://cdn.jsdelivr.net/gh/DanRSchley/Online-Number-Perception-Measurement-Tool@main/";
+  var assetVersion = "20260420j";
+  var assetBase = "https://cdn.jsdelivr.net/gh/DanRSchley/Online-Number-Perception-Measurement-Tool@2514f24c6b23fb2cac07594c05346c0fda4523ac/";
   var q = this;
   var container = document.createElement("div");
   var inlineStyle = document.createElement("style");
@@ -68,6 +68,12 @@ Qualtrics.SurveyEngine.addOnload(function () {
       mountEl: "#behavioral-experiment-root"
     }).then(function () {
       sanitizeInputs();
+    }).catch(function (error) {
+      container.innerHTML =
+        '<div class="panel"><h1>Experiment Error</h1><p>' +
+        String(error && error.message ? error.message : error) +
+        "</p></div>";
+      throw error;
     });
   }
 
@@ -82,19 +88,33 @@ Qualtrics.SurveyEngine.addOnload(function () {
 
   window.addEventListener("behavioral-experiment:complete", handleComplete);
 
-  if (window.initExperiment) {
-    startExperiment();
-  } else {
-    var css = document.createElement("link");
-    css.rel = "stylesheet";
-    css.href = assetBase + "styles.css?v=" + assetVersion;
-    document.head.appendChild(css);
-
-    var script = document.createElement("script");
-    script.src = assetBase + "app.js?v=" + assetVersion;
-    script.onload = startExperiment;
-    document.body.appendChild(script);
+  var oldCss = document.getElementById("behavioral-experiment-styles");
+  if (oldCss) {
+    oldCss.remove();
   }
+  var oldScript = document.getElementById("behavioral-experiment-script");
+  if (oldScript) {
+    oldScript.remove();
+  }
+  try {
+    delete window.initExperiment;
+    delete window.BehavioralExperimentPlatform;
+  } catch (error) {
+    window.initExperiment = undefined;
+    window.BehavioralExperimentPlatform = undefined;
+  }
+
+  var css = document.createElement("link");
+  css.id = "behavioral-experiment-styles";
+  css.rel = "stylesheet";
+  css.href = assetBase + "styles.css?v=" + assetVersion;
+  document.head.appendChild(css);
+
+  var script = document.createElement("script");
+  script.id = "behavioral-experiment-script";
+  script.src = assetBase + "app.js?v=" + assetVersion;
+  script.onload = startExperiment;
+  document.body.appendChild(script);
 
   sanitizeInputs();
   var observer = new MutationObserver(function () {
