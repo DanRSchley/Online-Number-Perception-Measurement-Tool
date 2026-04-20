@@ -2,7 +2,7 @@
    Paste inside Qualtrics question JavaScript and host app files where Qualtrics can reach them. */
 
 Qualtrics.SurveyEngine.addOnload(function () {
-  var assetVersion = "20260420g";
+  var assetVersion = "20260420h";
   var assetBase = "https://cdn.jsdelivr.net/gh/DanRSchley/Online-Number-Perception-Measurement-Tool@main/";
   var q = this;
   var container = document.createElement("div");
@@ -23,7 +23,7 @@ Qualtrics.SurveyEngine.addOnload(function () {
     "#behavioral-experiment-root .response-panel{width:min(640px,88vw) !important;max-width:100% !important;}" +
     "#behavioral-experiment-root .response-grid{width:min(640px,88vw) !important;max-width:100% !important;}" +
     "#behavioral-experiment-root .response-input-row{display:flex !important;align-items:center !important;justify-content:center !important;gap:8px !important;}" +
-    "#behavioral-experiment-root .response-input-row input{width:min(150px,100%) !important;min-width:0 !important;}" +
+    "#behavioral-experiment-root .response-input-row input{width:min(118px,100%) !important;min-width:0 !important;}" +
     "#behavioral-experiment-root .response-unit{font-size:0.95rem !important;color:#5f6979 !important;white-space:nowrap !important;}" +
     "#behavioral-experiment-root input[type='number']::-webkit-outer-spin-button," +
     "#behavioral-experiment-root input[type='number']::-webkit-inner-spin-button{-webkit-appearance:none !important;margin:0 !important;}" +
@@ -40,7 +40,6 @@ Qualtrics.SurveyEngine.addOnload(function () {
   window.__BEHAVIORAL_EXPERIMENT_ASSIGNMENTS = {
     participantId: "${e://Field/participant_id}",
     sessionId: "${e://Field/ResponseID}",
-    condition: "${e://Field/task_condition}",
     counterbalancingAssignment: "${e://Field/counterbalance_assignment}",
     task: "${e://Field/task}",
     numberOfTrials: "${e://Field/number_of_trials}",

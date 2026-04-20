@@ -204,7 +204,7 @@ input[type="range"] {
 }
 
 .response-input-row input {
-  width: min(220px, 100%);
+  width: min(140px, 100%);
   min-width: 0;
 }
 
@@ -479,7 +479,7 @@ input[type="range"] {
 }
 
 .qualtrics-embed .response-input-row input {
-  width: min(150px, 100%);
+  width: min(118px, 100%);
 }
 
 .qualtrics-embed .response-unit {
