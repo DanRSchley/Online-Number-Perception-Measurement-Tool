@@ -192,6 +192,17 @@
     }
   }
 
+  function getJointLayoutMetrics(config, arrayCount) {
+    const grid = getNumerosityGridDimensions(arrayCount || DEFAULT_NUMEROSITY_ARRAY_COUNT);
+    if (grid.columns === 3 && grid.rows === 3) {
+      return { margin: 34, gap: 24, labelReservedTop: 36, labelFontSize: 24 };
+    }
+    if (grid.columns === 3) {
+      return { margin: 42, gap: 32, labelReservedTop: 48, labelFontSize: 30 };
+    }
+    return { margin: 56, gap: 44, labelReservedTop: 64, labelFontSize: 40 };
+  }
+
   function interpolateNumericSeries(values, desiredCount) {
     if (!values.length) {
       return [];
@@ -427,14 +438,15 @@
 
   function computeSafeNumerosityMax(config, arrayCount) {
     const grid = getNumerosityGridDimensions(arrayCount || DEFAULT_NUMEROSITY_ARRAY_COUNT);
-    const margin = 70;
-    const gap = 72;
+    const layout = getJointLayoutMetrics(config, arrayCount);
+    const margin = layout.margin;
+    const gap = layout.gap;
     const jointWidth =
       (config.ui.numerosityCanvasWidth - margin * 2 - gap * (grid.columns - 1)) / grid.columns;
     const jointHeight =
       (config.ui.numerosityCanvasHeight - margin * 2 - gap * (grid.rows - 1)) / grid.rows;
     const usableWidth = jointWidth - 48;
-    const usableHeight = jointHeight - 82 - 24;
+    const usableHeight = jointHeight - layout.labelReservedTop - 18;
     const squareCap = Math.floor(Math.min(usableWidth, usableHeight) / NUMEROSITY_RANGE_CELL_PX);
     return Math.max(NUMEROSITY_RANGE_MIN, squareCap * squareCap);
   }
