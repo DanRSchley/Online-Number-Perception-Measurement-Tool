@@ -741,14 +741,29 @@
       this.canvasHeight = config.ui.numerosityCanvasHeight;
     }
 
+    getDisplaySize() {
+      const rootWidth = this.screenManager.root
+        ? this.screenManager.root.getBoundingClientRect().width
+        : window.innerWidth;
+      const maxWidth = Math.max(320, Math.min(this.canvasWidth, rootWidth - 24, window.innerWidth * 0.82));
+      const scale = maxWidth / this.canvasWidth;
+      return {
+        width: Math.round(maxWidth),
+        height: Math.round(this.canvasHeight * scale)
+      };
+    }
+
     createCanvasStage() {
       const screen = this.screenManager.createScreen("screen");
       const stage = document.createElement("div");
       stage.className = "canvas-stage";
       const canvas = document.createElement("canvas");
       canvas.className = "stimulus-canvas";
+      const displaySize = this.getDisplaySize();
       canvas.width = this.canvasWidth * window.devicePixelRatio;
       canvas.height = this.canvasHeight * window.devicePixelRatio;
+      canvas.style.width = `${displaySize.width}px`;
+      canvas.style.height = `${displaySize.height}px`;
       const context = canvas.getContext("2d");
       context.scale(window.devicePixelRatio, window.devicePixelRatio);
       stage.appendChild(canvas);
