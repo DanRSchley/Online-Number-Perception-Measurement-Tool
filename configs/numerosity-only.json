@@ -3,9 +3,9 @@
     "title": "Numerosity Task",
     "instructionsTitle": "Dot Estimation Task",
     "instructionsText": [
-      "You will see groups of dots on the screen.",
-      "Estimate how many dots were shown and answer with whole numbers only.",
-      "Some displays may disappear before you respond."
+      "You'll see groups of dots on the screen.",
+      "Give your best estimate with whole numbers only.",
+      "Some displays will stay on screen and some will disappear, so please use your intuition rather than counting."
     ]
   },
   "export": {

@@ -3,8 +3,8 @@
     "title": "Numerosity Task",
     "instructionsTitle": "Dot Estimation Task",
     "instructionsText": [
-      "Preview configuration: separate evaluation with brief removed presentation.",
-      "You will see one dot array at a time, and the dots will disappear before you answer."
+      "You'll see one group of dots at a time.",
+      "The dots will disappear before you answer, so use your intuition rather than trying to count."
     ]
   },
   "export": {

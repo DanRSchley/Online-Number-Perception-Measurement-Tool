@@ -3,8 +3,8 @@
     "title": "Proportion Judgment Task",
     "instructionsTitle": "Proportion Judgment Task",
     "instructionsText": [
-      "Estimate the percentage of each bar segment visually.",
-      "Enter open-ended numbers from 0 to 100. Decimals are allowed."
+      "You'll be estimating percentages from bar displays.",
+      "Type your best guess from 0 to 100. Decimals are okay."
     ]
   },
   "export": {

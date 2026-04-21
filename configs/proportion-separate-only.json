@@ -3,8 +3,8 @@
     "title": "Proportion Judgment Task",
     "instructionsTitle": "Proportion Judgment Task",
     "instructionsText": [
-      "Preview configuration: separate evaluation for the proportion task.",
-      "Enter one open-ended percentage for the shaded portion of the bar."
+      "You'll see one bar at a time.",
+      "Type your best guess for what percentage of the bar is shaded."
     ]
   },
   "export": {

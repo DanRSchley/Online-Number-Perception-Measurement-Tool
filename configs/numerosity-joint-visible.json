@@ -3,8 +3,8 @@
     "title": "Numerosity Task",
     "instructionsTitle": "Dot Estimation Task",
     "instructionsText": [
-      "Preview configuration: joint evaluation with persistent visible presentation.",
-      "You will see four arrays together and they will stay visible while you answer."
+      "You'll see a few groups of dots on the screen at the same time.",
+      "The dots will stay visible while you answer, so please use your intuition instead of counting."
     ]
   },
   "export": {

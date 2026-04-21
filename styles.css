@@ -146,7 +146,7 @@ input[type="range"] {
 }
 
 .message {
-  font-size: clamp(1.9rem, 2.8vw, 3rem);
+  font-size: clamp(1.73rem, 2.55vw, 2.83rem);
   text-align: center;
   line-height: 1.35;
 }
@@ -185,9 +185,22 @@ input[type="range"] {
 
 .response-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(240px, 1fr));
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
   gap: 18px;
   width: min(760px, 100%);
+}
+
+.response-grid[data-count="2"] {
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+}
+
+.response-grid[data-count="4"] {
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+}
+
+.response-grid[data-count="6"] {
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  width: min(860px, 100%);
 }
 
 .response-field {
@@ -251,7 +264,7 @@ input[type="range"] {
 
 .bar-heading h2 {
   margin: 0 0 8px;
-  font-size: 2.3rem;
+  font-size: 2.13rem;
   font-weight: 600;
   color: var(--fg);
 }
@@ -260,7 +273,16 @@ input[type="range"] {
   margin: 0;
   color: var(--muted);
   line-height: 1.5;
-  font-size: 1.18rem;
+  font-size: 1.01rem;
+}
+
+.bar-practice-note {
+  margin: 0 0 10px;
+  color: #c62828;
+  font-size: 0.98rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
 
 .bar-svg {
@@ -388,7 +410,7 @@ input[type="range"] {
 
 .qualtrics-embed .panel h1,
 .qualtrics-embed .panel h2 {
-  font-size: clamp(1.8rem, 2.15vw, 2.5rem);
+  font-size: clamp(1.63rem, 1.95vw, 2.33rem);
 }
 
 .qualtrics-embed .panel p,
@@ -398,7 +420,7 @@ input[type="range"] {
 }
 
 .qualtrics-embed .message {
-  font-size: clamp(1.2rem, 1.65vw, 1.8rem);
+  font-size: clamp(1.03rem, 1.45vw, 1.63rem);
 }
 
 .qualtrics-embed .fixation {
@@ -432,6 +454,11 @@ input[type="range"] {
 .qualtrics-embed .bar-heading p {
   font-size: 0.92rem;
   line-height: 1.28;
+}
+
+.qualtrics-embed .bar-practice-note {
+  margin-bottom: 6px;
+  font-size: 0.82rem;
 }
 
 .qualtrics-embed .bar-svg {
@@ -501,8 +528,21 @@ input[type="range"] {
     padding: 28px;
   }
 
-  .response-grid {
+  .response-grid:not([data-count="2"]):not([data-count="4"]):not([data-count="6"]) {
     grid-template-columns: 1fr;
+  }
+
+  .response-grid[data-count="2"] {
+    grid-template-columns: repeat(2, minmax(140px, 1fr));
+  }
+
+  .response-grid[data-count="4"] {
+    grid-template-columns: repeat(2, minmax(140px, 1fr));
+  }
+
+  .response-grid[data-count="6"] {
+    grid-template-columns: repeat(3, minmax(120px, 1fr));
+    width: min(100%, 760px);
   }
 
   .percentage-grid {

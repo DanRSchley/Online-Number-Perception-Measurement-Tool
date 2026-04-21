@@ -1,45 +1,59 @@
 # Behavioral Experiment Platform
 
-This project is a standalone browser-based experiment platform designed to run locally or inside Qualtrics. It supports:
+This project is a browser-based task platform for numerosity and proportion judgments. It can run:
 
-- numerosity estimation with a 2 x 2 `separate/joint` x `brief/visible` design
-- proportion judgments with `joint/separate` bar displays and estimate-mode responses
-- shared configuration, timing, logging, export, and Qualtrics handoff
+- locally in a browser
+- inside Qualtrics
+- with either static JSON configs or task-key-based runtime overrides
 
-## Files
+## What It Supports
+
+- numerosity estimation
+  - `separate_brief`
+  - `separate_visible`
+  - `joint_brief`
+  - `joint_visible`
+- proportion estimation
+  - `proportion_separate_evaluation`
+  - `proportion_joint_evaluation`
+  - `proportion_joint_evaluation_constsum`
+- one practice round before every task block
+- Qualtrics embedded-data handoff
+- CSV and JSON export when run locally
+
+## Main Files
 
 - `index.html`
 - `app.js`
 - `styles.css`
-- `Behavioral Experiment Platform Instructions.docx`
-- `configs/sample-combined.json`
-- `configs/numerosity-only.json`
-- `configs/proportion-only.json`
-- `trials/sample-proportion-trials.json`
 - `qualtrics/qualtrics-snippet.js`
+- `configs/*.json`
+- `Behavioral Experiment Platform Instructions v2.docx`
+- `Qualtrics Task Setup Guide v4.docx`
 
-The Word guide `Behavioral Experiment Platform Instructions.docx` contains step-by-step usage notes for local running, internal configuration, and Qualtrics integration.
+## Running Locally
 
-## Running locally
-
-Because this is a browser app that loads JSON configs, run it from a local web server rather than double-clicking the HTML file.
-
-Simple PowerShell option:
+Run a local web server from PowerShell:
 
 ```powershell
 Set-Location "C:\Users\Schley\Erasmus Universiteit Rotterdam Dropbox\Dan Schley\Non-shared Research files\Ongoing\JustDan\ProportionCalibration\Online Tool"
-python -m http.server 8000
+py -m http.server 8000
 ```
 
 Then open:
 
-- `http://localhost:8000/`
-- `http://localhost:8000/?config=./configs/numerosity-only.json`
-- `http://localhost:8000/?config=./configs/proportion-only.json`
+- [http://localhost:8000/](http://localhost:8000/)
+- [http://localhost:8000/?task=numerosity_joint_visible&number_of_estimates=12&number_of_arrays=4&numerosity_range=10-60](http://localhost:8000/?task=numerosity_joint_visible&number_of_estimates=12&number_of_arrays=4&numerosity_range=10-60)
+- [http://localhost:8000/?task=proportion_joint_evaluation&number_of_estimates=24&number_of_boxes=8](http://localhost:8000/?task=proportion_joint_evaluation&number_of_estimates=24&number_of_boxes=8)
+
+Important:
+
+- do not open `index.html` directly with `file://`
+- keep DevTools open and check `Disable cache` when testing updated local assets
 
 ## Public API
 
-The browser global `window.initExperiment()` starts the experiment.
+The app is started through:
 
 ```js
 window.initExperiment({
@@ -48,114 +62,77 @@ window.initExperiment({
   sessionId: "S001",
   config: "./configs/sample-combined.json",
   embeddedAssignments: {
-    condition: "joint_brief",
-    counterbalancingAssignment: "even"
+    task: "numerosity_joint_visible",
+    counterbalancingAssignment: "even",
+    numberOfEstimates: 24,
+    numberOfArrays: 4,
+    numerosityRange: "10-80"
   }
 });
 ```
 
-`config` may be a path to a JSON config file or an inline config object.
+`config` can be:
 
-## Config structure
+- a JSON config path
+- an inline config object
+- omitted, in which case task-key loading and defaults are used
 
-Top-level sections:
+## Runtime Controls
 
-- `experiment`
-- `ui`
-- `timing`
-- `export`
-- `qualtrics`
-- `blocks`
-- `taskSettings.numerosity`
-- `taskSettings.proportion`
+The current participant-facing control names are:
 
-### Numerosity config
+- `task`
+- `participant_id`
+- `counterbalance_assignment`
+- `number_of_estimates`
+- `number_of_arrays`
+- `number_of_boxes`
+- `numerosity_range`
+- `brief_display_ms`
 
-Numerosity trial-sets must live in:
+The app still accepts some legacy aliases for backward compatibility, including:
 
-- `taskSettings.numerosity.practiceTrialSets`
-- `taskSettings.numerosity.trialSets`
+- `number_of_trials`
+- camelCase equivalents such as `numberOfEstimates`
 
-Each trial-set must contain exactly four arrays labeled `A`, `B`, `C`, and `D`.
+### Meaning Of Each Control
 
-Supported conditions:
+- `task`
+  - selects the task version to run
+- `participant_id`
+  - optional external participant identifier
+  - if omitted in Qualtrics, the app falls back to the Qualtrics response/session identifier
+- `counterbalance_assignment`
+  - controls within-person order mappings such as whether joint proportion uses `A = smallest` or `A = largest`
+- `number_of_estimates`
+  - the participant-facing workload setting
+  - for joint tasks, the app converts this into fewer screens by dividing by the number of groups or boxes and rounding up
+- `number_of_arrays`
+  - numerosity joint-task control
+  - allowed values: `2`, `4`, `6`
+- `number_of_boxes`
+  - joint proportion control
+  - allowed values: `2` through `10`
+- `numerosity_range`
+  - explicit range such as `10-80`
+  - single-value shorthand such as `40` means `10-40` by default
+- `brief_display_ms`
+  - brief numerosity display duration override in milliseconds
 
-- `separate_brief`
-- `separate_visible`
-- `joint_brief`
-- `joint_visible`
+### Current Defaults
 
-### Proportion config
+- `number_of_estimates`
+  - `40` in Qualtrics when not supplied
+- `number_of_arrays`
+  - `4`
+- `number_of_boxes`
+  - `5`
+- `numerosity_range`
+  - `10-100` unless the safe upper bound for the current array layout is lower
 
-Proportion trials can come from:
+## Task Keys
 
-- `taskSettings.proportion.trialList`
-- `taskSettings.proportion.proceduralGenerator`
-
-Each proportion trial includes:
-
-- `trial_id`
-- `format`
-- `target_label`
-- `A`, `B`, `C`, `D`, `E`
-
-All five proportions must sum to `1`.
-
-Supported response method in the current build:
-
-- `numeric`
-
-## Data export
-
-At the end of the session the app can:
-
-- auto-download CSV
-- auto-download JSON
-- write serialized rows and metadata into Qualtrics embedded data fields
-- suppress local downloads automatically when running inside Qualtrics
-
-Numerosity exports one row per array judgment. Joint numerosity trials still become four rows so they match separate conditions cleanly.
-
-Proportion separate trials export one row per displayed target. Joint proportion trials export one row per labeled block `A-E` for each bar stimulus.
-
-## Qualtrics use
-
-1. Host `index.html`, `app.js`, `styles.css`, and your config JSON somewhere Qualtrics can reach.
-2. Create embedded data fields in Qualtrics for participant ID, task assignment, and saved results.
-3. Use the example in `qualtrics/qualtrics-snippet.js` as a starting point.
-4. Pass the desired task with one embedded-data value such as `task = numerosity_separate_brief`, `task = proportion_joint_evaluation`, or `task = proportion_joint_evaluation_constsum`.
-5. In Qualtrics, the app now suppresses the participant-ID entry screen and uses the Qualtrics session/response identifier automatically when no explicit `participant_id` field is supplied.
-6. For the Qualtrics question HTML, use only `<div id="behavioral-experiment-root"></div>` so the task can take over the full question container cleanly.
-7. If Qualtrics appears to use older assets, prefer loading the files through jsDelivr with a version suffix, then hard refresh the preview with `Ctrl+F5`. Example:
-
-```js
-css.href = "https://cdn.jsdelivr.net/gh/DanRSchley/Online-Number-Perception-Measurement-Tool@main/styles.css?v=20260420a";
-script.src = "https://cdn.jsdelivr.net/gh/DanRSchley/Online-Number-Perception-Measurement-Tool@main/app.js?v=20260420a";
-```
-8. Survey Flow can also control:
-   - `number_of_trials`
-   - `number_of_arrays`
-   - `number_of_boxes`
-   - `numerosity_range`
-   - `brief_display_ms`
-
-Behavior of the extra Qualtrics fields:
-
-- `number_of_trials`: default is `40` in Qualtrics if not supplied. This is a conservative online default based on common 40-64 trial counts in numerical-cognition tasks.
-- `number_of_arrays`: numerosity-only control. Allowed values are `2`, `4`, or `6`. Joint numerosity layouts become `2x1`, `2x2`, or `3x2` accordingly. Values above `6` are clamped down to `6`.
-- `number_of_boxes`: joint-proportion-only control. Allowed values are `2` through `10`, with default `5`. The renderer shrinks the label treatment automatically as the number of categories increases.
-- `numerosity_range`: accepts either a single maximum such as `40` or an explicit range such as `20-40`. A single value means `4` through that maximum. The app clamps the range to a safe upper limit of `144` for the joint-visible dot layout.
-- `brief_display_ms`: overrides the brief dot-presentation duration for `separate_brief` and `joint_brief`.
-
-The adapter writes to:
-
-- `experiment_data_json`
-- `experiment_metadata_json`
-- `experiment_complete`
-
-These names are configurable in the JSON config.
-
-Supported task keys for Survey Flow:
+Supported task keys:
 
 - `combined_session`
 - `numerosity_only`
@@ -164,34 +141,127 @@ Supported task keys for Survey Flow:
 - `numerosity_joint_brief`
 - `numerosity_joint_visible`
 - `proportion_only`
+- `proportion_separate_evaluation`
 - `proportion_joint_evaluation`
 - `proportion_joint_evaluation_constsum`
-- `proportion_separate_evaluation`
 
-## Current scope
+## Practice Structure
 
-Implemented now:
+Every task block begins with one practice round.
 
-- shared experiment controller
-- shared config validation
-- numerosity task with all four conditions
-- proportion task with `joint/separate` percentage-entry mode
-- open-ended numeric percentage responses
-- Qualtrics embedded-data adapter
-- local CSV/JSON export
-- sample configs and sample trial file
+- the practice round is visually labeled `Practice Round` or `Practice Trial`
+- practice rows are logged with `practice = true`
+- practice stimuli are sampled without replacement from the scored pool logic, so the same item should not immediately reappear as a counted item
 
-Planned extension points already left in place:
+## Data Logging
 
-- compare/category proportion judgments
-- CSV trial-file loading
-- resume interrupted sessions
-- server POST saving
-- richer feedback and attention checks
+### Qualtrics output fields
 
-## Notes
+Create these Embedded Data fields in Survey Flow:
 
-- The app is dependency-free and does not require Node or npm.
-- Numerosity uses canvas rendering and seeded dot generation.
-- Proportion uses SVG so bars stay crisp and consistently scaled.
-- Timing uses `performance.now()` and requestAnimationFrame-based display windows for brief numerosity presentations.
+- `experiment_data_json`
+- `experiment_metadata_json`
+- `experiment_complete`
+
+Do not manually set those output fields. The task writes them automatically.
+
+### Metadata currently recorded
+
+The app records runtime metadata including:
+
+- requested estimate count
+- requested number of arrays
+- requested number of boxes
+- numerosity range minimum and maximum
+- safe numerosity maximum for the current layout
+- brief display duration
+- joint proportion label-order mapping
+
+### Important row-level fields
+
+Numerosity rows include fields such as:
+
+- `task_family`
+- `evaluation_mode`
+- `availability_mode`
+- `number_of_arrays`
+- `array_label`
+- `numerosity_true_value`
+- `response`
+- `practice`
+
+Proportion rows include fields such as:
+
+- `task_family`
+- `format`
+- `number_of_boxes`
+- `proportion_joint_label_order`
+- `target_label`
+- `target_true_proportion`
+- `response`
+- `joint_total_response`
+- `practice`
+
+## Qualtrics Setup
+
+1. Add a Text / Graphic question.
+2. Set the question HTML to:
+
+```html
+<div id="behavioral-experiment-root"></div>
+```
+
+3. Paste the contents of `qualtrics/qualtrics-snippet.js` into the question JavaScript editor.
+4. Create the Embedded Data fields listed above.
+5. Set at least:
+
+- `task`
+- `number_of_estimates`
+
+6. Add task-specific fields only when needed:
+
+- numerosity joint tasks:
+  - `number_of_arrays`
+  - `numerosity_range`
+  - `brief_display_ms` for brief versions
+- joint proportion tasks:
+  - `number_of_boxes`
+
+### Task-specific notes
+
+- `proportion_joint_evaluation`
+  - no running total box
+  - responses do not need to sum to 100
+- `proportion_joint_evaluation_constsum`
+  - shows a total box
+  - enforces a 100-total response
+- joint proportion tasks keep the label-size ordering fixed within person
+  - one participant may get `A = smallest`
+  - another may get `A = largest`
+  - this is recorded as `proportion_joint_label_order`
+
+### Qualtrics caching advice
+
+If a preview seems stale:
+
+1. open DevTools
+2. go to `Network`
+3. check `Disable cache`
+4. hard refresh with `Ctrl+F5`
+
+For GitHub-hosted assets, prefer either:
+
+- a commit-pinned jsDelivr URL, or
+- a version query string such as `?v=20260421a`
+
+The current README and the newest Word guides are the authoritative setup docs. Older `.docx` guides in the folder are legacy references.
+
+## Config Notes
+
+- numerosity JSON configs may still contain older fixed trial examples, but the runtime now rescales and expands them based on the current Embedded Data controls
+- proportion joint tasks are procedurally generated and then sorted into a fixed within-person label order
+- minimum visible proportion is constrained so a section should render at at least about 2 pixels wide in the configured bar width
+
+## Status
+
+This README reflects the current runtime behavior more closely than the older Word guides. If a Word guide and this README disagree, trust the README and current source first.

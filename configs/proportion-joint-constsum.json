@@ -3,8 +3,9 @@
     "title": "Proportion Judgment Task",
     "instructionsTitle": "Proportion Judgment Task",
     "instructionsText": [
-      "Preview configuration: joint evaluation with a constant-sum requirement.",
-      "Enter open-ended percentages for all five labeled blocks so that they total 100."
+      "You'll see one bar split into colored sections.",
+      "Type your best guess for how much of the bar each section takes up.",
+      "Try to make your answers add up to 100."
     ]
   },
   "export": {

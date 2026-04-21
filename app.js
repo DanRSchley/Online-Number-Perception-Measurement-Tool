@@ -17,7 +17,7 @@
     ui: {
       backgroundColor: "#FFFFFF",
       textColor: "#1E2430",
-      dotColor: "#22303C",
+      dotColor: "#315F8C",
       numerosityCanvasWidth: 1280,
       numerosityCanvasHeight: 900,
       proportionSvgWidth: 1220,
@@ -25,10 +25,10 @@
       showFullscreenPrompt: true,
       allowParticipantIdEntry: false
     },
-    timing: {
-      readyMs: 2000,
-      fixationMs: 400,
-      briefDisplayMs: 500,
+      timing: {
+        readyMs: 2000,
+        fixationMs: 400,
+        briefDisplayMs: 500,
       blankMs: 200,
       postResponseBlankMs: 0,
       feedbackMs: 1000,
@@ -50,50 +50,60 @@
       completionField: "experiment_complete"
     },
     blocks: [],
-    taskSettings: {
-      numerosity: {
-        instructionsTitle: "Dot Estimation Task",
-        instructionsText: [
-          "You will see groups of dots on the screen.",
-          "Estimate how many dots were shown.",
-          "Please use your best quick estimate and do not try to count.",
-          "Enter whole numbers only."
-        ],
-        readyText: "Get ready for the next set of dots",
-        promptSeparate: "How many dots were shown?",
-        promptJoint: "How many dots were shown in each array?",
+      taskSettings: {
+        numerosity: {
+          instructionsTitle: "Dot Estimation Task",
+          instructionsText: [
+            "You'll see groups of dots on the screen.",
+            "Give your best estimate of how many dots there are.",
+            "Use your intuition and do not try to count.",
+            "Enter whole numbers only."
+          ],
+          readyText: "Get ready for the next dot display",
+          promptSeparate: "How many dots are on the screen?",
+          promptJoint: "How many dots are in each group?",
         randomizeTrialSets: true,
         randomizeConditionWhenMissing: true,
         practiceTrialSets: [],
         trialSets: []
       },
-      proportion: {
-        instructionsTitle: "Proportion Judgment Task",
-        instructionsText: [
-          "You will judge percentages shown in bar charts.",
-          "Enter open-ended percentages from 0 to 100.",
-          "Decimals are allowed. Use your best visual estimate and do not calculate."
-        ],
-        jointPrompt: "What percentage of the full bar is each block?",
-        jointHelperText: "Enter percentages for A through E so that they total 100. Use your best visual estimate. Decimals are allowed.",
-        separatePrompt: "What percentage of the full bar is shaded?",
-        separateHelperText: "Type a number from 0 to 100. Use your best visual estimate. Decimals are allowed.",
-        showJointTotalBox: true,
-        requireJointTotal100: true,
-        showTargetLabelInSeparate: false,
-        colorPalette: {
-          A: "#0072B2",
-          B: "#E69F00",
-          C: "#009E73",
-          D: "#CC79A7",
-          E: "#56B4E9"
-        },
+        proportion: {
+          instructionsTitle: "Proportion Judgment Task",
+          instructionsText: [
+            "You'll see bars split into colored sections.",
+            "Give your best guess for the percentage in each section.",
+            "Decimals are fine. Just go with what looks right."
+          ],
+          jointPrompt: "What percentage of the whole bar is each section?",
+          jointHelperText: "Type your best guess for A through E, and try to make them add up to 100. Decimals are fine.",
+          separatePrompt: "What percentage of the bar is shaded?",
+          separateHelperText: "Type your best guess from 0 to 100. Decimals are fine.",
+          showJointTotalBox: true,
+          requireJointTotal100: true,
+          showTargetLabelInSeparate: false,
+          colorPalette: {
+            A: "#0072B2",
+            B: "#F0E442",
+            C: "#CC79A7",
+            D: "#009E73",
+            E: "#D55E00",
+            F: "#56B4E9",
+            G: "#000000",
+            H: "#E69F00",
+            I: "#999933",
+            J: "#882255"
+          },
         grayscalePalette: {
           A: "#EFEFEF",
           B: "#D8D8D8",
           C: "#BFBFBF",
           D: "#9C9C9C",
-          E: "#757575"
+          E: "#757575",
+          F: "#E2E2E2",
+          G: "#CACACA",
+          H: "#AFAFAF",
+          I: "#8E8E8E",
+          J: "#686868"
         },
         useGrayscale: false,
         responseMethod: "numeric",
@@ -133,16 +143,19 @@
   const ALL_LABELS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".slice(0, 10).split("");
   const DEFAULT_NUMEROSITY_ARRAY_COUNT = 4;
   const SUPPORTED_NUMEROSITY_ARRAY_COUNTS = [2, 4, 6];
-  // Online numerical-cognition studies commonly use roughly 40-64 test trials.
-  // Use 40 as the conservative default for Qualtrics deployments unless overridden.
-  const DEFAULT_QUALTRICS_TRIALS = 40;
-  const DEFAULT_PROPORTION_BOX_COUNT = 5;
-  const PROPORTION_BOX_COUNT_MIN = 2;
-  const PROPORTION_BOX_COUNT_MAX = 10;
-  const PROPORTION_VISIBLE_MIN = 0.0025;
-  const PROPORTION_VISIBLE_MAX = 0.9975;
-  const NUMEROSITY_RANGE_MIN = 4;
-  const NUMEROSITY_RANGE_CELL_PX = 19;
+    // Online numerical-cognition studies commonly use roughly 40-64 test trials.
+    // Use 40 as the conservative default for Qualtrics deployments unless overridden.
+    const DEFAULT_QUALTRICS_TRIALS = 40;
+    const DEFAULT_PROPORTION_BOX_COUNT = 5;
+    const PROPORTION_BOX_COUNT_MIN = 2;
+    const PROPORTION_BOX_COUNT_MAX = 10;
+    const PROPORTION_VISIBLE_MIN = 0.0025;
+    const PROPORTION_VISIBLE_MAX = 0.9975;
+    const NUMEROSITY_RANGE_MIN = 4;
+    const DEFAULT_NUMEROSITY_RANGE_MIN = 10;
+    const DEFAULT_NUMEROSITY_RANGE_MAX = 100;
+    const NUMEROSITY_RANGE_CELL_PX = 19;
+    const FIXATION_SYMBOL = "\u25B3";
 
   function getLabelSet(count) {
     return ALL_LABELS.slice(0, count);
@@ -172,9 +185,80 @@
   function createPaletteLookup(basePalette, labels) {
     const output = {};
     labels.forEach((label, index) => {
-      output[label] = basePalette[label] || basePalette[ALL_LABELS[index]] || "#DDDDDD";
+      output[label] =
+        basePalette[label] ||
+        basePalette[ALL_LABELS[index]] ||
+        basePalette[ALL_LABELS[index % ALL_LABELS.length]] ||
+        "#DDDDDD";
     });
     return output;
+  }
+
+  function distributeLabelAnchors(targets, minGap, minX, maxX) {
+    if (!targets.length) {
+      return [];
+    }
+    const sorted = targets
+      .map((target, index) => ({ ...target, index }))
+      .sort((a, b) => a.desiredX - b.desiredX);
+    let currentX = minX;
+    sorted.forEach((target) => {
+      target.x = Math.max(target.desiredX, currentX);
+      currentX = target.x + minGap;
+    });
+    const overflow = sorted[sorted.length - 1].x - maxX;
+    if (overflow > 0) {
+      for (let index = sorted.length - 1; index >= 0; index -= 1) {
+        const nextX =
+          index === sorted.length - 1
+            ? Math.max(minX, sorted[index].x - overflow)
+            : Math.min(sorted[index].x, sorted[index + 1].x - minGap);
+        sorted[index].x = nextX;
+      }
+      if (sorted[0].x < minX) {
+        const shift = minX - sorted[0].x;
+        sorted.forEach((target) => {
+          target.x += shift;
+        });
+      }
+    }
+    const output = new Array(targets.length);
+    sorted.forEach((target) => {
+      output[target.index] = target.x;
+    });
+    return output;
+  }
+
+  function countNoun(value, singular, plural) {
+    return `${value} ${value === 1 ? singular : plural}`;
+  }
+
+  function describeNumerosityLayout(arrayCount, jointMode) {
+    if (!jointMode) {
+      return "You'll see one group of dots at a time.";
+    }
+    if (arrayCount === 2) {
+      return "You'll see 2 groups of dots side by side on each screen.";
+    }
+    if (arrayCount === 4) {
+      return "You'll see 4 groups of dots laid out in a 2 by 2 grid on each screen.";
+    }
+    return "You'll see 6 groups of dots laid out in a 3 by 2 grid on each screen.";
+  }
+
+  function getNumerosityPrompt(evaluationMode, availabilityMode) {
+    if (evaluationMode === "joint") {
+      return availabilityMode === "visible"
+        ? "How many dots are in each group? Please don't count them. Use your intuition."
+        : "How many dots were in each group? Please don't count them. Use your intuition.";
+    }
+    return availabilityMode === "visible"
+      ? "How many dots are on the screen? Please don't count them. Use your intuition."
+      : "How many dots were shown? Please don't count them. Use your intuition.";
+  }
+
+  function toSentenceList(parts) {
+    return parts.filter(Boolean);
   }
 
   function getNumerosityGridDimensions(arrayCount) {
@@ -373,20 +457,25 @@
 
   function parseRangeOverride(raw, fallbackMax) {
     if (raw === undefined || raw === null || raw === "") {
-      return { min: NUMEROSITY_RANGE_MIN, max: fallbackMax };
+      const minValue = clamp(DEFAULT_NUMEROSITY_RANGE_MIN, NUMEROSITY_RANGE_MIN, fallbackMax);
+      const maxValue = clamp(DEFAULT_NUMEROSITY_RANGE_MAX, minValue, fallbackMax);
+      return { min: minValue, max: maxValue };
     }
     const text = String(raw).trim();
     const rangeMatch = text.match(/^(\d+)\s*[-,:]\s*(\d+)$/);
-    let minValue = NUMEROSITY_RANGE_MIN;
+    let minValue = Math.min(DEFAULT_NUMEROSITY_RANGE_MIN, fallbackMax);
     let maxValue = null;
     if (rangeMatch) {
       minValue = Number(rangeMatch[1]);
       maxValue = Number(rangeMatch[2]);
     } else {
       maxValue = Number(text);
+      minValue = Math.min(DEFAULT_NUMEROSITY_RANGE_MIN, maxValue);
     }
     if (!Number.isFinite(maxValue) || !Number.isFinite(minValue)) {
-      return { min: NUMEROSITY_RANGE_MIN, max: fallbackMax };
+      const fallbackMin = clamp(DEFAULT_NUMEROSITY_RANGE_MIN, NUMEROSITY_RANGE_MIN, fallbackMax);
+      const fallbackRangeMax = clamp(DEFAULT_NUMEROSITY_RANGE_MAX, fallbackMin, fallbackMax);
+      return { min: fallbackMin, max: fallbackRangeMax };
     }
     minValue = clamp(Math.round(minValue), NUMEROSITY_RANGE_MIN, fallbackMax);
     maxValue = clamp(Math.round(maxValue), NUMEROSITY_RANGE_MIN, fallbackMax);
@@ -442,8 +531,19 @@
       (config.ui.numerosityCanvasHeight - margin * 2 - gap * (grid.rows - 1)) / grid.rows;
     const usableWidth = jointWidth - 48;
     const usableHeight = jointHeight - layout.labelReservedTop - 18;
-    const squareCap = Math.floor(Math.min(usableWidth, usableHeight) / NUMEROSITY_RANGE_CELL_PX);
+    const cellPx =
+      (arrayCount || DEFAULT_NUMEROSITY_ARRAY_COUNT) >= 6
+        ? 12
+        : (arrayCount || DEFAULT_NUMEROSITY_ARRAY_COUNT) >= 4
+          ? 14
+          : NUMEROSITY_RANGE_CELL_PX;
+    const squareCap = Math.floor(Math.min(usableWidth, usableHeight) / cellPx);
     return Math.max(NUMEROSITY_RANGE_MIN, squareCap * squareCap);
+  }
+
+  function getMinimumVisibleProportion(config) {
+    const totalWidth = Math.max(1, (config.ui.proportionSvgWidth || 1220) - 180);
+    return round(2 / totalWidth, 4);
   }
 
   function applyQualtricsUiTuning(config) {
@@ -469,22 +569,44 @@
         nextTrialSet.arrays.map((arrayDef) => Number(arrayDef.numerosity)),
         labelSet.length
       );
+      const setRng = createSeededRng(hashString(nextTrialSet.trialSetId || JSON.stringify(interpolatedSourceValues)));
+      const normalizedValues = interpolatedSourceValues.map((value) => (value - originalMin) / span);
+      const jointMode = labelSet.length > 1;
+      const shapeExponent = jointMode
+        ? setRng() < 0.5
+          ? 0.55 + setRng() * 0.55
+          : 1.15 + setRng() * 1.25
+        : 1;
+      const boundaryInset = jointMode ? setRng() * 0.16 : 0;
+      const scaledValues = normalizedValues.map((value) => {
+        const shapedRatio = Math.pow(value, shapeExponent);
+        const insetRatio = boundaryInset + shapedRatio * Math.max(0, 1 - boundaryInset * 2);
+        return targetMin + insetRatio * (targetMax - targetMin);
+      });
+      const scaledMean =
+        scaledValues.reduce((sum, value) => sum + value, 0) / Math.max(1, scaledValues.length);
+      const compression = jointMode ? 0.82 + setRng() * 0.3 : 0.88 + setRng() * 0.12;
+      let adjustedValues = scaledValues.map((value) => scaledMean + (value - scaledMean) * compression);
+      const minAdjusted = Math.min(...adjustedValues);
+      const maxAdjusted = Math.max(...adjustedValues);
+      const shiftMin = targetMin - minAdjusted;
+      const shiftMax = targetMax - maxAdjusted;
+      const shift =
+        shiftMin <= shiftMax
+          ? shiftMin + (shiftMax - shiftMin) * setRng()
+          : 0;
+      adjustedValues = adjustedValues.map((value) => value + shift);
+      const roundedValues = adjustedValues.map((value) => clamp(Math.round(value), targetMin, targetMax));
+      const sortedRoundedValues = roundedValues
+        .map((value, index) => ({ value, index }))
+        .sort((a, b) => a.value - b.value || a.index - b.index)
+        .map((entry) => entry.value);
       nextTrialSet.arrays = labelSet.map((label, index) => {
         const template = nextTrialSet.arrays[index % nextTrialSet.arrays.length];
-        const ratio = (interpolatedSourceValues[index] - originalMin) / span;
-        const scaled = targetMin + ratio * (targetMax - targetMin);
-        const numerosity =
-          labelSet.length === 1
-            ? targetMin
-            : index === 0
-              ? targetMin
-              : index === labelSet.length - 1
-                ? targetMax
-                : clamp(Math.round(scaled), targetMin, targetMax);
         return {
           ...template,
           label,
-          numerosity,
+          numerosity: sortedRoundedValues[index],
           seed: Number(template.seed) + index * 1000
         };
       });
@@ -510,6 +632,10 @@
       output.push(source);
     }
     return output;
+  }
+
+  function cloneTrialSetList(trialSets) {
+    return (trialSets || []).map(cloneTrialSet);
   }
 
   function expandTrials(trials, desiredCount) {
@@ -833,10 +959,17 @@
       };
     }
 
-    createCanvasStage() {
+    createCanvasStage(options) {
+      const settings = options || {};
       const screen = this.screenManager.createScreen("screen");
       const stage = document.createElement("div");
       stage.className = "canvas-stage";
+      if (settings.isPractice) {
+        const practiceNote = document.createElement("div");
+        practiceNote.className = "bar-practice-note";
+        practiceNote.textContent = "Practice Round";
+        stage.appendChild(practiceNote);
+      }
       const canvas = document.createElement("canvas");
       canvas.className = "stimulus-canvas";
       const displaySize = this.getDisplaySize();
@@ -872,16 +1005,16 @@
       }
     }
 
-    renderSingle(arrayStimulus) {
-      const view = this.createCanvasStage();
+    renderSingle(arrayStimulus, options) {
+      const view = this.createCanvasStage(options);
       this.drawBackground(view.context);
       this.drawArray(view.context, arrayStimulus.points, null, arrayStimulus.region);
       this.screenManager.render(view.screen);
       return view;
     }
 
-    renderJoint(stimuli) {
-      const view = this.createCanvasStage();
+    renderJoint(stimuli, options) {
+      const view = this.createCanvasStage(options);
       this.drawBackground(view.context);
       stimuli.forEach((stimulus) => {
         this.drawArray(view.context, stimulus.points, stimulus.label, stimulus.region);
@@ -906,15 +1039,23 @@
       heading.className = "bar-heading";
       const title = document.createElement("h2");
       title.textContent = options.format === "joint"
-        ? this.config.taskSettings.proportion.jointPrompt
+        ? labels.length <= 5
+          ? this.config.taskSettings.proportion.jointPrompt
+          : `What percentage of the full bar is each of the ${labels.length} blocks?`
         : this.config.taskSettings.proportion.separatePrompt;
       const helper = document.createElement("p");
       helper.textContent =
         options.format === "joint"
           ? labels.length <= 5
             ? this.config.taskSettings.proportion.jointHelperText
-            : `Enter percentages for ${labels[0]} through ${labels[labels.length - 1]}. Use your best visual estimate. Decimals are allowed.`
+            : `Type your best guess for ${labels[0]} through ${labels[labels.length - 1]}${options.requireTotal100 ? ", and try to make them add up to 100" : ""}. Decimals are fine.`
           : this.config.taskSettings.proportion.separateHelperText;
+      if (options.isPractice) {
+        const practiceNote = document.createElement("div");
+        practiceNote.className = "bar-practice-note";
+        practiceNote.textContent = "Practice Trial";
+        heading.appendChild(practiceNote);
+      }
       heading.appendChild(title);
       heading.appendChild(helper);
       const svg = createSvgElement("svg", {
@@ -932,12 +1073,19 @@
 
       const totalWidth = this.config.ui.proportionSvgWidth - 180;
       const x0 = 90;
-      const targetY = options.format === "joint" ? 260 : 200;
+      const targetY =
+        options.format === "joint"
+          ? labels.length >= 8
+            ? 166
+            : labels.length >= 6
+              ? 176
+              : 190
+          : 200;
       const height = options.format === "joint" ? 78 : 68;
       const targetLabel = trial.target_label;
       const showLabels = options.format === "joint" || options.showTargetLabelInSeparate;
-      const labelFontSize = labels.length >= 9 ? 20 : labels.length >= 7 ? 24 : 32;
-      const labelBoxSize = labels.length >= 9 ? 14 : 18;
+      const labelFontSize = labels.length >= 8 ? 18 : labels.length >= 6 ? 22 : 30;
+      const labelBoxSize = labels.length >= 8 ? 14 : 16;
 
       if (options.format === "joint") {
         let cursor = x0;
@@ -950,77 +1098,79 @@
             width,
             height,
             fill: palette[label] || "#DDDDDD",
-            stroke: "#8A94A6",
-            "stroke-width": 1.6
+            stroke: "none"
           }, svg);
           centers[label] = cursor + width / 2;
           cursor += width;
         });
-        createSvgElement("rect", {
-          x: x0,
-          y: targetY,
-          width: totalWidth,
-          height,
-          fill: "none",
-          stroke: "#8590A3",
-          "stroke-width": 1.5
-        }, svg);
-
-        const jointLabels = labels;
-        const slotGap = totalWidth / (jointLabels.length - 1);
-        const slotAnchors = jointLabels.reduce((map, label, index) => {
-          map[label] = x0 + slotGap * index;
-          return map;
-        }, {});
-        jointLabels.forEach((label) => {
-          const labelX = slotAnchors[label];
-          const topY = 92;
-          const elbowY = 184;
-          const labelY = 78;
+        const createConnector = (label, labelX, labelY, anchorY) => {
           createSvgElement("line", {
             x1: labelX,
-            y1: labelY + 20,
-            x2: labelX,
-            y2: elbowY,
-            stroke: "#9AA3B2",
-            "stroke-width": 2
-          }, svg);
-          createSvgElement("line", {
-            x1: labelX,
-            y1: elbowY,
+            y1: labelY,
             x2: centers[label],
-            y2: elbowY,
+            y2: anchorY,
             stroke: "#9AA3B2",
             "stroke-width": 2
           }, svg);
-          createSvgElement("line", {
-            x1: centers[label],
-            y1: elbowY,
-            x2: centers[label],
-            y2: targetY,
-            stroke: "#9AA3B2",
-            "stroke-width": 2
+        };
+        const placeLabel = (label, labelX, labelY) => {
+          createSvgElement("rect", {
+            x: labelX - labelBoxSize,
+            y: labelY - labelBoxSize + 2,
+            width: labelBoxSize,
+            height: labelBoxSize,
+            fill: palette[label] || "#DDDDDD",
+            stroke: "#8A94A6",
+            "stroke-width": 1.2
           }, svg);
+          const text = createSvgElement("text", {
+            x: labelX + 8,
+            y: labelY + 1,
+            "text-anchor": "start",
+            fill: "#2A3240",
+            "font-size": labelFontSize,
+            "font-family": "Segoe UI, sans-serif",
+            "font-weight": "600"
+          }, svg);
+          text.textContent = label;
+        };
+        const orderedByPosition = labels
+          .map((label) => ({ label, center: centers[label] }))
+          .sort((a, b) => a.center - b.center);
+        const chunkSize = labels.length >= 8 ? 3 : labels.length >= 6 ? 2 : Math.max(1, Math.ceil(labels.length / 2));
+        const topSlots = [];
+        const bottomSlots = [];
+        for (let index = 0; index < orderedByPosition.length; index += chunkSize) {
+          const chunk = orderedByPosition.slice(index, index + chunkSize);
+          const targetBand = Math.floor(index / chunkSize) % 2 === 0 ? topSlots : bottomSlots;
+          targetBand.push(...chunk);
+        }
+        const topXs = distributeLabelAnchors(
+          topSlots.map((slot) => ({ desiredX: slot.center })),
+          labels.length >= 8 ? 92 : 112,
+          x0 + 10,
+          x0 + totalWidth - 54
+        );
+        const bottomXs = distributeLabelAnchors(
+          bottomSlots.map((slot) => ({ desiredX: slot.center })),
+          labels.length >= 8 ? 92 : 112,
+          x0 + 32,
+          x0 + totalWidth - 32
+        );
+        topSlots.forEach((slot, index) => {
+          const labelY = labels.length >= 8 ? 52 : 60;
+          const labelX = topXs[index];
+          createConnector(slot.label, labelX, labelY + 18, targetY);
           if (showLabels) {
-            createSvgElement("rect", {
-              x: labelX - labelBoxSize,
-              y: topY - labelBoxSize,
-              width: labelBoxSize,
-              height: labelBoxSize,
-              fill: palette[label] || "#DDDDDD",
-              stroke: "#8A94A6",
-              "stroke-width": 1.2
-            }, svg);
-            const text = createSvgElement("text", {
-              x: labelX + 10,
-              y: topY - 2,
-              "text-anchor": "start",
-              fill: "#2A3240",
-              "font-size": labelFontSize,
-              "font-family": "Segoe UI, sans-serif",
-              "font-weight": "600"
-            }, svg);
-            text.textContent = label;
+            placeLabel(slot.label, labelX, labelY);
+          }
+        });
+        bottomSlots.forEach((slot, index) => {
+          const labelY = targetY + height + (labels.length >= 8 ? 96 : 104);
+          const labelX = bottomXs[index];
+          createConnector(slot.label, labelX, labelY - 16, targetY + height);
+          if (showLabels) {
+            placeLabel(slot.label, labelX, labelY);
           }
         });
       } else {
@@ -1088,9 +1238,16 @@
       this.screenManager = screenManager;
     }
 
-    createResponsePanel(promptText) {
+    createResponsePanel(promptText, options) {
+      const settings = options || {};
       const panel = document.createElement("div");
       panel.className = "response-panel response-panel--compact";
+      if (settings.isPractice) {
+        const practiceNote = document.createElement("div");
+        practiceNote.className = "bar-practice-note";
+        practiceNote.textContent = "Practice Round";
+        panel.appendChild(practiceNote);
+      }
       if (promptText) {
         const prompt = document.createElement("div");
         prompt.className = "message";
@@ -1115,9 +1272,9 @@
       return { row, input, suffix };
     }
 
-    async collectSingleIntegerResponse(promptText, submitLabel) {
+    async collectSingleIntegerResponse(promptText, submitLabel, options) {
       const screen = this.screenManager.createScreen();
-      const panel = this.createResponsePanel(promptText);
+      const panel = this.createResponsePanel(promptText, options);
       const control = this.createNumericInputControl("numeric");
       const input = control.input;
       const button = document.createElement("button");
@@ -1154,8 +1311,8 @@
       });
     }
 
-    async collectSingleIntegerResponseEmbedded(host, promptText, submitLabel) {
-      const panel = this.createResponsePanel(promptText);
+    async collectSingleIntegerResponseEmbedded(host, promptText, submitLabel, options) {
+      const panel = this.createResponsePanel(promptText, options);
       const control = this.createNumericInputControl("numeric");
       const input = control.input;
       const button = document.createElement("button");
@@ -1191,11 +1348,12 @@
       });
     }
 
-    async collectJointIntegerResponses(labels, promptText) {
+    async collectJointIntegerResponses(labels, promptText, options) {
       const screen = this.screenManager.createScreen();
-      const panel = this.createResponsePanel(promptText);
+      const panel = this.createResponsePanel(promptText, options);
       const grid = document.createElement("div");
       grid.className = "response-grid";
+      grid.dataset.count = String(labels.length);
       const inputs = {};
       labels.forEach((label) => {
         const wrapper = document.createElement("div");
@@ -1247,10 +1405,11 @@
       });
     }
 
-    async collectJointIntegerResponsesEmbedded(host, labels, promptText) {
-      const panel = this.createResponsePanel(promptText);
+    async collectJointIntegerResponsesEmbedded(host, labels, promptText, options) {
+      const panel = this.createResponsePanel(promptText, options);
       const grid = document.createElement("div");
       grid.className = "response-grid";
+      grid.dataset.count = String(labels.length);
       const inputs = {};
       labels.forEach((label) => {
         const wrapper = document.createElement("div");
@@ -1591,14 +1750,6 @@
           height: region.height - region.labelReservedTop - 24
         };
       }
-      const area = regionBox.width * regionBox.height;
-      const baseRadius = Math.max(8, Math.min(24, Math.sqrt(area / 3600)));
-      const radius =
-        setType === 1
-          ? clamp(baseRadius * Math.sqrt(24 / Math.max(numerosity, 1)), 5, 24)
-          : clamp(baseRadius, 8, 22);
-      const maxAttempts = numerosity * 250;
-      const points = [];
       if (setType === 3) {
         const scale = clamp(Math.sqrt(numerosity / 30), 0.55, 1.2);
         const width = regionBox.width * scale;
@@ -1610,6 +1761,16 @@
           height
         };
       }
+      const count = Number(region.arrayCount || DEFAULT_NUMEROSITY_ARRAY_COUNT);
+      const radiusBase =
+        count >= 6
+          ? Math.min(regionBox.width, regionBox.height) / 28
+          : count >= 4
+            ? Math.min(regionBox.width, regionBox.height) / 25
+            : Math.min(regionBox.width, regionBox.height) / 22;
+      const radius = clamp(radiusBase, 3.2, 10);
+      const maxAttempts = numerosity * 250;
+      const points = [];
       const cols = Math.max(4, Math.ceil(Math.sqrt(numerosity)));
       const rows = Math.max(4, Math.ceil(numerosity / cols));
       const cellWidth = regionBox.width / cols;
@@ -1683,6 +1844,7 @@
             y: margin + row * (height + gap),
             width,
             height,
+            arrayCount: count,
             labelReservedTop: layout.labelReservedTop,
             labelFontSize: layout.labelFontSize
           };
@@ -1760,8 +1922,12 @@
     }
 
     generateExtremeSeparateTrials(labels, generator, rng) {
+      const minVisible = getMinimumVisibleProportion(this.config);
+      const maxVisible = round(1 - minVisible, 4);
+      const ultraVisibleMax = round(Math.min(minVisible * 2.2, 0.008), 4);
       const edgeBands = generator.edgeBands || [
-        [PROPORTION_VISIBLE_MIN, 0.01],
+        [minVisible, ultraVisibleMax],
+        [ultraVisibleMax, 0.02],
         [0.01, 0.03],
         [0.03, 0.08],
         [0.08, 0.2],
@@ -1769,18 +1935,49 @@
         [0.8, 0.92],
         [0.92, 0.97],
         [0.97, 0.99],
-        [0.99, PROPORTION_VISIBLE_MAX]
+        [0.99, round(maxVisible - (ultraVisibleMax - minVisible), 4)],
+        [round(maxVisible - (ultraVisibleMax - minVisible), 4), maxVisible]
       ];
-      const edgeWeights = generator.edgeWeights || [7, 6, 5, 3, 1, 3, 5, 6, 7];
+      const edgeWeights = generator.edgeWeights || [10, 8, 6, 4, 1, 3, 5, 6, 8, 10];
       const repeatsPerLabel = generator.trialsPerBin || 2;
       const output = [];
       labels.forEach((targetLabel) => {
+        output.push({
+          trial_id: `proc_sep_${targetLabel}_anchor_min`,
+          stimulus_id: `proc_sep_${targetLabel}_anchor_min`,
+          block: null,
+          format: "separate",
+          labels: labels.slice(),
+          target_label: targetLabel,
+          random_seed: hashString(`${targetLabel}-anchor-min`)
+        });
+        output[output.length - 1][targetLabel] = minVisible;
+        this.sampleRemainderShares(labels.length - 1, round(1 - minVisible, 4), rng, minVisible, 0.78)
+          .forEach((value, index) => {
+            const otherLabel = labels.filter((label) => label !== targetLabel)[index];
+            output[output.length - 1][otherLabel] = value;
+          });
+        output.push({
+          trial_id: `proc_sep_${targetLabel}_anchor_max`,
+          stimulus_id: `proc_sep_${targetLabel}_anchor_max`,
+          block: null,
+          format: "separate",
+          labels: labels.slice(),
+          target_label: targetLabel,
+          random_seed: hashString(`${targetLabel}-anchor-max`)
+        });
+        output[output.length - 1][targetLabel] = maxVisible;
+        this.sampleRemainderShares(labels.length - 1, round(1 - maxVisible, 4), rng, minVisible, 0.78)
+          .forEach((value, index) => {
+            const otherLabel = labels.filter((label) => label !== targetLabel)[index];
+            output[output.length - 1][otherLabel] = value;
+          });
         edgeBands.forEach((band, bandIndex) => {
           for (let repeat = 0; repeat < repeatsPerLabel; repeat += 1) {
             const target = round(band[0] + (band[1] - band[0]) * rng(), 4);
             const remainder = round(1 - target, 4);
             const otherLabels = labels.filter((label) => label !== targetLabel);
-            const shares = this.sampleRemainderShares(otherLabels.length, remainder, rng, 0.0025, 0.75);
+            const shares = this.sampleRemainderShares(otherLabels.length, remainder, rng, minVisible, 0.78);
             const trial = {
               trial_id: `proc_sep_${targetLabel}_${bandIndex}_${repeat}_${output.length + 1}`,
               stimulus_id: `proc_sep_${targetLabel}_${bandIndex}`,
@@ -1805,64 +2002,331 @@
     }
 
     generateSkewedJointTrials(labels, generator, rng) {
+      const minVisible = getMinimumVisibleProportion(this.config);
       const profiles = generator.skewProfiles || [
-        { dominantRange: [0.78, 0.9], tinyRange: [0.0025, 0.01], weight: 8 },
-        { dominantRange: [0.68, 0.8], tinyRange: [0.005, 0.02], weight: 5 },
-        { dominantRange: [0.55, 0.68], tinyRange: [0.01, 0.04], weight: 2 }
+        { family: "single_extreme", mode: "single", dominantRange: [0.76, 0.9], tinyRange: [minVisible, 0.012], weight: 2 },
+        { family: "single_moderate", mode: "single", dominantRange: [0.5, 0.7], tinyRange: [minVisible, 0.03], weight: 2 },
+        { family: "dual_peak", mode: "dual", primaryRange: [0.34, 0.5], secondaryRange: [0.22, 0.34], tinyRange: [minVisible, 0.05], weight: 3 },
+        { family: "steep_stair", mode: "cascade", topRange: [0.28, 0.4], secondRange: [0.16, 0.28], thirdRange: [0.08, 0.18], weight: 3 },
+        { family: "gentle_stair", mode: "tiered", firstRange: [0.18, 0.28], secondRange: [0.14, 0.22], thirdRange: [0.1, 0.18], weight: 3 },
+        { family: "balanced", mode: "balanced", firstRange: [0.14, 0.22], secondRange: [0.12, 0.2], thirdRange: [0.1, 0.16], weight: 3 },
+        { family: "alternating", mode: "checker", highRange: [0.18, 0.28], lowRange: [minVisible, 0.1], weight: 2 },
+        { family: "middle_heavy", mode: "middle_heavy", centerRange: [0.24, 0.34], flankRange: [0.1, 0.18], tinyRange: [minVisible, 0.05], weight: 2 },
+        { family: "tri_peak", mode: "tri_peak", peakRange: [0.16, 0.26], valleyRange: [minVisible, 0.1], weight: 2 },
+        { family: "uniformish", mode: "uniformish", baseRange: [0.09, 0.18], weight: 3 }
       ];
       const output = [];
+      output.push(...this.generateJointAnchorTrials(labels, minVisible));
       profiles.forEach((profile, profileIndex) => {
         const repeats = profile.weight || 1;
         for (let repeat = 0; repeat < repeats; repeat += 1) {
-          const dominantLabel = labels[Math.floor(rng() * labels.length)];
-          const dominant = round(
-            profile.dominantRange[0] + (profile.dominantRange[1] - profile.dominantRange[0]) * rng(),
-            4
-          );
-          const otherLabels = labels.filter((label) => label !== dominantLabel);
-          const tinyCount = Math.min(
-            otherLabels.length - 1,
-            Math.max(1, Math.floor(rng() * Math.min(3, otherLabels.length)))
-          );
-          const tinyLabels = shuffleWithRng(otherLabels, rng).slice(0, tinyCount);
-          const mediumLabels = otherLabels.filter((label) => !tinyLabels.includes(label));
-          const tinyValues = tinyLabels.map(() =>
-            round(profile.tinyRange[0] + (profile.tinyRange[1] - profile.tinyRange[0]) * rng(), 4)
-          );
-          const tinyTotal = tinyValues.reduce((sum, value) => sum + value, 0);
-          const remainder = round(1 - dominant - tinyTotal, 4);
-          if (remainder <= 0.02) {
-            continue;
-          }
-          const mediumShares = this.sampleRemainderShares(
-            Math.max(1, mediumLabels.length),
-            remainder,
-            rng,
-            0.01,
-            0.8
-          );
+          const shuffledLabels = shuffleWithRng(labels, rng);
           const trial = {
             trial_id: `proc_joint_${profileIndex}_${repeat}_${output.length + 1}`,
             stimulus_id: `proc_joint_${profileIndex}`,
             block: null,
             format: "joint",
+            distribution_family: profile.family || profile.mode,
             labels: labels.slice(),
-            target_label: dominantLabel,
-            random_seed: hashString(`${dominantLabel}-${profileIndex}-${repeat}-${dominant}`)
+            target_label: shuffledLabels[0],
+            random_seed: hashString(`${shuffledLabels.join("")}-${profileIndex}-${repeat}`)
           };
           labels.forEach((label) => {
             trial[label] = 0;
           });
-          trial[dominantLabel] = dominant;
-          tinyLabels.forEach((label, index) => {
-            trial[label] = tinyValues[index];
-          });
-          mediumLabels.forEach((label, index) => {
-            trial[label] = mediumShares[index] || 0;
-          });
+          if (profile.mode === "dual") {
+            const primary = round(
+              profile.primaryRange[0] + (profile.primaryRange[1] - profile.primaryRange[0]) * rng(),
+              4
+            );
+            const secondary = round(
+              profile.secondaryRange[0] + (profile.secondaryRange[1] - profile.secondaryRange[0]) * rng(),
+              4
+            );
+            const smallLabels = shuffledLabels.slice(2);
+            const tinyCount = Math.min(smallLabels.length, Math.max(1, Math.floor(rng() * 2) + 1));
+            const tinyLabels = smallLabels.slice(0, tinyCount);
+            const mediumLabels = smallLabels.slice(tinyCount);
+            const tinyValues = tinyLabels.map(() =>
+              round(profile.tinyRange[0] + (profile.tinyRange[1] - profile.tinyRange[0]) * rng(), 4)
+            );
+            const remainder = round(1 - primary - secondary - tinyValues.reduce((sum, value) => sum + value, 0), 4);
+            if (remainder <= 0.03) {
+              continue;
+            }
+            const mediumShares = this.sampleRemainderShares(
+              Math.max(1, mediumLabels.length),
+              remainder,
+              rng,
+              minVisible,
+              0.42
+            );
+            trial[shuffledLabels[0]] = primary;
+            trial[shuffledLabels[1]] = secondary;
+            tinyLabels.forEach((label, index) => {
+              trial[label] = tinyValues[index];
+            });
+            mediumLabels.forEach((label, index) => {
+              trial[label] = mediumShares[index] || 0;
+            });
+          } else if (profile.mode === "cascade") {
+            const top = round(
+              profile.topRange[0] + (profile.topRange[1] - profile.topRange[0]) * rng(),
+              4
+            );
+            const second = round(
+              profile.secondRange[0] + (profile.secondRange[1] - profile.secondRange[0]) * rng(),
+              4
+            );
+            const third = round(
+              profile.thirdRange[0] + (profile.thirdRange[1] - profile.thirdRange[0]) * rng(),
+              4
+            );
+            const remainder = round(1 - top - second - third, 4);
+            if (remainder <= 0.04) {
+              continue;
+            }
+            const remainingLabels = shuffledLabels.slice(3);
+            const remainingShares = this.sampleRemainderShares(
+              Math.max(1, remainingLabels.length),
+              remainder,
+              rng,
+              minVisible,
+              0.24
+            );
+            trial[shuffledLabels[0]] = top;
+            trial[shuffledLabels[1]] = second;
+            trial[shuffledLabels[2]] = third;
+            remainingLabels.forEach((label, index) => {
+              trial[label] = remainingShares[index] || 0;
+            });
+          } else if (profile.mode === "tiered") {
+            const first = round(
+              profile.firstRange[0] + (profile.firstRange[1] - profile.firstRange[0]) * rng(),
+              4
+            );
+            const second = round(
+              profile.secondRange[0] + (profile.secondRange[1] - profile.secondRange[0]) * rng(),
+              4
+            );
+            const third = round(
+              profile.thirdRange[0] + (profile.thirdRange[1] - profile.thirdRange[0]) * rng(),
+              4
+            );
+            const remainder = round(1 - first - second - third, 4);
+            if (remainder <= 0.06) {
+              continue;
+            }
+            const remainingLabels = shuffledLabels.slice(3);
+            const remainingShares = this.sampleRemainderShares(
+              Math.max(1, remainingLabels.length),
+              remainder,
+              rng,
+              minVisible,
+              0.22
+            );
+            trial[shuffledLabels[0]] = first;
+            trial[shuffledLabels[1]] = second;
+            trial[shuffledLabels[2]] = third;
+            remainingLabels.forEach((label, index) => {
+              trial[label] = remainingShares[index] || 0;
+            });
+          } else if (profile.mode === "balanced") {
+            const first = round(
+              profile.firstRange[0] + (profile.firstRange[1] - profile.firstRange[0]) * rng(),
+              4
+            );
+            const second = round(
+              profile.secondRange[0] + (profile.secondRange[1] - profile.secondRange[0]) * rng(),
+              4
+            );
+            const third = round(
+              profile.thirdRange[0] + (profile.thirdRange[1] - profile.thirdRange[0]) * rng(),
+              4
+            );
+            const remainder = round(1 - first - second - third, 4);
+            if (remainder <= 0.08) {
+              continue;
+            }
+            const remainingLabels = shuffledLabels.slice(3);
+            const remainingShares = this.sampleRemainderShares(
+              Math.max(1, remainingLabels.length),
+              remainder,
+              rng,
+              minVisible,
+              0.24
+            );
+            trial[shuffledLabels[0]] = first;
+            trial[shuffledLabels[1]] = second;
+            trial[shuffledLabels[2]] = third;
+            remainingLabels.forEach((label, index) => {
+              trial[label] = remainingShares[index] || 0;
+            });
+          } else if (profile.mode === "checker") {
+            const highs = shuffledLabels.filter((_, index) => index % 2 === 0);
+            const lows = shuffledLabels.filter((_, index) => index % 2 === 1);
+            const highValues = highs.map(() =>
+              round(profile.highRange[0] + (profile.highRange[1] - profile.highRange[0]) * rng(), 4)
+            );
+            const lowValues = lows.map(() =>
+              round(profile.lowRange[0] + (profile.lowRange[1] - profile.lowRange[0]) * rng(), 4)
+            );
+            const totalUsed =
+              highValues.reduce((sum, value) => sum + value, 0) +
+              lowValues.reduce((sum, value) => sum + value, 0);
+            if (totalUsed >= 0.98) {
+              continue;
+            }
+            highs.forEach((label, index) => {
+              trial[label] = highValues[index];
+            });
+            lows.forEach((label, index) => {
+              trial[label] = lowValues[index];
+            });
+          } else if (profile.mode === "middle_heavy") {
+            const centerIndex = Math.floor(shuffledLabels.length / 2);
+            const centerLabel = shuffledLabels[centerIndex];
+            const centerValue = round(
+              profile.centerRange[0] + (profile.centerRange[1] - profile.centerRange[0]) * rng(),
+              4
+            );
+            const flankLabels = shuffledLabels.filter((label, index) => index !== centerIndex).slice(0, 2);
+            const flankValues = flankLabels.map(() =>
+              round(profile.flankRange[0] + (profile.flankRange[1] - profile.flankRange[0]) * rng(), 4)
+            );
+            const remainingLabels = shuffledLabels.filter(
+              (label) => label !== centerLabel && !flankLabels.includes(label)
+            );
+            const remainingTotal = round(
+              1 - centerValue - flankValues.reduce((sum, value) => sum + value, 0),
+              4
+            );
+            if (remainingTotal <= minVisible * remainingLabels.length) {
+              continue;
+            }
+            const remainingShares = this.sampleRemainderShares(
+              Math.max(1, remainingLabels.length),
+              remainingTotal,
+              rng,
+              minVisible,
+              0.18
+            );
+            trial[centerLabel] = centerValue;
+            flankLabels.forEach((label, index) => {
+              trial[label] = flankValues[index];
+            });
+            remainingLabels.forEach((label, index) => {
+              trial[label] = remainingShares[index] || 0;
+            });
+          } else if (profile.mode === "tri_peak") {
+            const peakLabels = [shuffledLabels[0], shuffledLabels[Math.floor(shuffledLabels.length / 2)], shuffledLabels[shuffledLabels.length - 1]]
+              .filter((label, index, list) => list.indexOf(label) === index);
+            const peakValues = peakLabels.map(() =>
+              round(profile.peakRange[0] + (profile.peakRange[1] - profile.peakRange[0]) * rng(), 4)
+            );
+            const valleyLabels = shuffledLabels.filter((label) => !peakLabels.includes(label));
+            const valleyValues = valleyLabels.map(() =>
+              round(profile.valleyRange[0] + (profile.valleyRange[1] - profile.valleyRange[0]) * rng(), 4)
+            );
+            const totalUsed =
+              peakValues.reduce((sum, value) => sum + value, 0) +
+              valleyValues.reduce((sum, value) => sum + value, 0);
+            if (totalUsed >= 0.98) {
+              continue;
+            }
+            peakLabels.forEach((label, index) => {
+              trial[label] = peakValues[index];
+            });
+            valleyLabels.forEach((label, index) => {
+              trial[label] = valleyValues[index];
+            });
+          } else if (profile.mode === "uniformish") {
+            const rawValues = shuffledLabels.map(() =>
+              round(profile.baseRange[0] + (profile.baseRange[1] - profile.baseRange[0]) * rng(), 4)
+            );
+            const totalUsed = rawValues.reduce((sum, value) => sum + value, 0);
+            if (totalUsed <= 0) {
+              continue;
+            }
+            shuffledLabels.forEach((label, index) => {
+              trial[label] = rawValues[index];
+            });
+          } else {
+            const dominant = round(
+              profile.dominantRange[0] + (profile.dominantRange[1] - profile.dominantRange[0]) * rng(),
+              4
+            );
+            const otherLabels = shuffledLabels.slice(1);
+            const tinyCount = Math.min(
+              otherLabels.length - 1,
+              Math.max(1, Math.floor(rng() * Math.min(3, otherLabels.length)))
+            );
+            const tinyLabels = otherLabels.slice(0, tinyCount);
+            const mediumLabels = otherLabels.slice(tinyCount);
+            const tinyValues = tinyLabels.map(() =>
+              round(profile.tinyRange[0] + (profile.tinyRange[1] - profile.tinyRange[0]) * rng(), 4)
+            );
+            const tinyTotal = tinyValues.reduce((sum, value) => sum + value, 0);
+            const remainder = round(1 - dominant - tinyTotal, 4);
+            if (remainder <= 0.02) {
+              continue;
+            }
+            const mediumShares = this.sampleRemainderShares(
+              Math.max(1, mediumLabels.length),
+              remainder,
+              rng,
+              minVisible,
+              0.45
+            );
+            trial[shuffledLabels[0]] = dominant;
+            tinyLabels.forEach((label, index) => {
+              trial[label] = tinyValues[index];
+            });
+            mediumLabels.forEach((label, index) => {
+              trial[label] = mediumShares[index] || 0;
+            });
+          }
           const normalized = this.normalizeTrialShares(labels, trial);
           output.push(normalized);
         }
+      });
+      return output;
+    }
+
+    generateJointAnchorTrials(labels, minVisible) {
+      const output = [];
+      const ascending = labels.slice();
+      const descending = labels.slice().reverse();
+      [
+        { order: ascending, name: "anchor_single_left" },
+        { order: descending, name: "anchor_single_right" }
+      ].forEach((anchor, anchorIndex) => {
+        const trial = {
+          trial_id: `proc_joint_${anchor.name}`,
+          stimulus_id: `proc_joint_${anchor.name}`,
+          block: null,
+          format: "joint",
+          distribution_family: "anchor_extreme",
+          labels: labels.slice(),
+          target_label: anchor.order[0],
+          random_seed: hashString(`${anchor.name}-${anchorIndex}`)
+        };
+        const dominant = round(0.74 + 0.08 * (anchorIndex % 2), 4);
+        const remainingLabels = anchor.order.slice(1);
+        const smallestLabel = remainingLabels[0];
+        trial[anchor.order[0]] = dominant;
+        trial[smallestLabel] = minVisible;
+        const remainingShares = this.sampleRemainderShares(
+          Math.max(1, remainingLabels.length - 1),
+          round(1 - dominant - minVisible, 4),
+          createSeededRng(hashString(`${anchor.name}-remainder`)),
+          minVisible,
+          0.16
+        );
+        remainingLabels.slice(1).forEach((label, index) => {
+          trial[label] = remainingShares[index] || minVisible;
+        });
+        output.push(this.normalizeTrialShares(labels, trial));
       });
       return output;
     }
@@ -1946,11 +2410,17 @@
         this.embeddedAssignments.counterbalancingAssignment ||
         this.queryParams.counterbalancingAssignment ||
         deriveParityAssignment(this.participantId || this.sessionId);
-      this.requestedTrialCount =
+      this.proportionJointOrderMode =
+        this.counterbalancingAssignment === "odd" ? "descending" : "ascending";
+      this.requestedEstimateCount =
+        parsePositiveInteger(this.embeddedAssignments.numberOfEstimates) ||
+        parsePositiveInteger(this.embeddedAssignments.number_of_estimates) ||
         parsePositiveInteger(this.embeddedAssignments.numberOfTrials) ||
         parsePositiveInteger(this.embeddedAssignments.number_of_trials) ||
+        parsePositiveInteger(this.queryParams.number_of_estimates) ||
         parsePositiveInteger(this.queryParams.number_of_trials) ||
         (this.isQualtricsRuntime ? DEFAULT_QUALTRICS_TRIALS : null);
+      this.requestedTrialCount = this.requestedEstimateCount;
       this.requestedNumerosityArrayCount = parseChoiceInteger(
         this.embeddedAssignments.numberOfArrays ||
           this.embeddedAssignments.number_of_arrays ||
@@ -1993,9 +2463,10 @@
       });
       this.logger.metadata.qualtrics_overrides = {
         task: this.embeddedAssignments.task || this.queryParams.task || null,
-        number_of_trials: this.requestedTrialCount,
+        number_of_estimates: this.requestedEstimateCount,
         number_of_arrays: this.requestedNumerosityArrayCount,
         number_of_boxes: this.requestedProportionBoxCount,
+        proportion_joint_label_order: this.proportionJointOrderMode,
         numerosity_range_min: this.requestedNumerosityRange.min,
         numerosity_range_max: this.requestedNumerosityRange.max,
         numerosity_range_safe_max: this.safeNumerosityMax,
@@ -2013,23 +2484,134 @@
         this.participantId = this.sessionId;
         this.logger.sessionInfo.participantId = this.participantId;
       }
-      await this.showInstructions();
       const blocks = this.resolveBlocks();
+      await this.showInstructions(blocks);
       for (let index = 0; index < blocks.length; index += 1) {
         await this.runBlock(blocks[index], index);
       }
       this.finish();
     }
 
-    async showInstructions() {
+    getTaskIntroContent(block) {
+      if (!block) {
+        return {
+          title: "Behavioral Estimation Task",
+          paragraphs: [
+            "You'll be making quick visual estimates in this task.",
+            "Use your best judgment and answer as carefully as you can."
+          ]
+        };
+      }
+      if (block.taskFamily === "numerosity") {
+        const condition = this.resolveNumerosityCondition(block);
+        const parts = formatConditionParts(condition);
+        const jointMode = parts.evaluationMode === "joint";
+        const groupCount = jointMode ? this.requestedNumerosityArrayCount : 1;
+        const visibleText =
+          parts.availabilityMode === "visible"
+            ? "The dots will stay on the screen while you answer."
+            : "The dots will appear briefly and then disappear.";
+        return {
+          title: "Dot Estimation Task",
+          paragraphs: toSentenceList([
+            jointMode
+              ? `In this task, you'll see ${countNoun(groupCount, "group", "groups")} of dots on each screen.`
+              : "In this task, you'll see one group of dots at a time.",
+            jointMode
+              ? "Your job is to give your best guess for how many dots are in each group."
+              : "Your job is to give your best guess for how many dots are in the group.",
+            visibleText,
+            "Please do not count the dots. We want your quick visual estimate and intuition.",
+            "You'll start with one quick practice round first.",
+            "Enter whole numbers only."
+          ])
+        };
+      }
+      const jointMode = (block.format || "joint") === "joint";
+      const boxCount = jointMode ? this.requestedProportionBoxCount : 1;
+      const constSum = Boolean(this.config.taskSettings.proportion.requireJointTotal100);
+      return {
+        title: "Proportion Judgment Task",
+        paragraphs: toSentenceList([
+          jointMode
+            ? `In this task, you'll see one bar split into ${countNoun(boxCount, "colored section", "colored sections")}.`
+            : "In this task, you'll see one bar at a time.",
+          jointMode
+            ? "Your job is to estimate what percentage of the whole bar each colored section takes up."
+            : "Your job is to estimate what percentage of the bar is shaded.",
+          jointMode
+            ? constSum
+              ? "Try to make your answers add up to 100."
+              : "Your answers do not need to add up to 100."
+            : "Type your best percentage estimate from 0 to 100.",
+          "Decimals are okay.",
+          "You'll start with one quick practice round first."
+        ])
+      };
+    }
+
+    formatBlockSpecificInstructions(block) {
+      const paragraphs = [];
+      if (block.taskFamily === "numerosity") {
+        const condition = this.resolveNumerosityCondition(block);
+        const parts = formatConditionParts(condition);
+        paragraphs.push(
+          describeNumerosityLayout(this.requestedNumerosityArrayCount, parts.evaluationMode === "joint")
+        );
+        if (parts.availabilityMode === "visible") {
+          paragraphs.push("Please do not count the dots. Use your intuition about how many there are.");
+        } else {
+          paragraphs.push("The dots will disappear quickly, so use your intuition instead of trying to count.");
+        }
+      }
+      if (block.taskFamily === "proportion" && (block.format || "joint") === "joint") {
+        paragraphs.push(
+          `Each bar will be split into ${countNoun(this.requestedProportionBoxCount, "colored section", "colored sections")}.`
+        );
+        paragraphs.push(
+          `For you, the labels stay in the same size order from screen to screen, with A ${this.proportionJointOrderMode === "ascending" ? "smallest" : "largest"}.`
+        );
+      }
+      return paragraphs;
+    }
+
+    getPracticePreviewParagraph(block) {
+      if (block.taskFamily === "numerosity") {
+        return "You'll start with one quick practice round so you can see what the task looks like before the real estimates begin.";
+      }
+      if ((block.format || "joint") === "joint") {
+        return "You'll start with one quick practice round so you can get used to the bar layout before the real estimates begin.";
+      }
+      return "You'll start with one quick practice round so you can get used to the task before the real estimates begin.";
+    }
+
+    async showPracticeStartScreen(block) {
+      await this.screenManager.showInstructions(
+        "Let's do one quick practice round",
+        [this.getPracticePreviewParagraph(block)],
+        "Start Practice"
+      );
+    }
+
+    async showPracticeEndScreen() {
+      await this.screenManager.showInstructions(
+        "Nice, you're ready",
+        ["That was just a quick practice. The real task starts now."],
+        "Start"
+      );
+    }
+
+    async showInstructions(blocks) {
+      const firstBlock = blocks && blocks.length ? blocks[0] : null;
+      const intro = this.getTaskIntroContent(firstBlock);
       const paragraphs = [
-        ...this.config.experiment.instructionsText,
+        ...intro.paragraphs,
         ...(this.config.ui.showFullscreenPrompt
           ? ["Full-screen mode is recommended for best display consistency."]
           : [])
       ];
       await this.screenManager.showInstructions(
-        this.config.experiment.instructionsTitle,
+        intro.title,
         paragraphs,
         "Begin"
       );
@@ -2037,9 +2619,10 @@
 
     resolveBlocks() {
       const blocks = this.config.blocks.map((block) => ({ ...block }));
-      if (blocks.some((block) => block.counterbalanceGroup)) {
+      const filteredBlocks = blocks.filter((block) => !block.practice);
+      if (filteredBlocks.some((block) => block.counterbalanceGroup)) {
         const parity = this.counterbalancingAssignment;
-        return blocks
+        return filteredBlocks
           .filter((block) => {
             if (!block.counterbalanceGroup || block.counterbalanceGroup === "all") {
               return true;
@@ -2051,14 +2634,15 @@
           })
           .sort((a, b) => (a.order || 0) - (b.order || 0));
       }
-      return blocks.sort((a, b) => (a.order || 0) - (b.order || 0));
+      return filteredBlocks.sort((a, b) => (a.order || 0) - (b.order || 0));
     }
 
     async runBlock(block, blockIndex) {
-      if (block.instructionsTitle || block.instructionsText) {
+      if ((block.instructionsTitle || block.instructionsText) && blockIndex > 0) {
+        const intro = this.getTaskIntroContent(block);
         await this.screenManager.showInstructions(
-          block.instructionsTitle || block.name,
-          block.instructionsText || [],
+          intro.title,
+          intro.paragraphs,
           "Continue"
         );
       }
@@ -2105,6 +2689,39 @@
       return source;
     }
 
+    selectNumerosityPracticeTrialSet(block, mainTrialSets) {
+      const hasDedicatedPracticeSets = this.config.taskSettings.numerosity.practiceTrialSets.length > 0;
+      let practiceSourceSets;
+      let remainingMainTrialSets = cloneTrialSetList(mainTrialSets);
+      if (hasDedicatedPracticeSets) {
+        practiceSourceSets = rescaleNumerosityTrialSets(
+          this.getNumerosityTrialSets("practiceTrialSets"),
+          this.requestedNumerosityRange.min,
+          this.requestedNumerosityRange.max,
+          this.requestedNumerosityArrayCount
+        );
+      } else {
+        practiceSourceSets = cloneTrialSetList(mainTrialSets);
+        if (remainingMainTrialSets.length > 1) {
+          remainingMainTrialSets = remainingMainTrialSets.slice(1);
+        }
+      }
+      const sourceTrialSet = cloneTrialSet(practiceSourceSets[0]);
+      if (!sourceTrialSet) {
+        return { practiceTrialSet: null, mainTrialSets: remainingMainTrialSets };
+      }
+      const condition = this.resolveNumerosityCondition(block);
+      const parts = formatConditionParts(condition);
+      if (parts.evaluationMode === "separate") {
+        sourceTrialSet.arrays = [cloneTrial(sourceTrialSet.arrays[0])];
+      }
+      sourceTrialSet.trialSetId = `${sourceTrialSet.trialSetId || "Practice"}_preview`;
+      return {
+        practiceTrialSet: sourceTrialSet,
+        mainTrialSets: remainingMainTrialSets
+      };
+    }
+
     getDesiredNumerosityTrialSetCount(block) {
       if (block.practice) {
         return null;
@@ -2129,17 +2746,124 @@
           return matchesFormat && matchesBlock;
         });
       }
-      const desiredCount = block.practice ? block.maxTrials : (this.requestedTrialCount || block.maxTrials || null);
+      trials = trials.map((trial) => this.prepareProportionTrial(trial));
+      const baseDesiredCount = block.practice ? block.maxTrials : (this.requestedTrialCount || block.maxTrials || null);
+      const effectiveJointCount =
+        (block.format || "").toLowerCase() === "joint" && baseDesiredCount
+          ? Math.max(1, Math.ceil(baseDesiredCount / this.requestedProportionBoxCount))
+          : baseDesiredCount;
+      const desiredCount = effectiveJointCount;
       if (desiredCount) {
-        trials = expandTrials(trials, desiredCount);
+        const targetSelectionCount = desiredCount + (block.practice ? 0 : 1);
+        const anchors = this.getExtremeProportionTrials(trials).slice(0, Math.min(2, desiredCount));
         const rng = createSeededRng(hashString(`${this.participantId}-${block.name}`));
-        trials = shuffleWithRng(trials, rng).slice(0, desiredCount);
+        let fillerPool = expandTrials(trials, Math.max(targetSelectionCount * 3, targetSelectionCount));
+        fillerPool = shuffleWithRng(fillerPool, rng);
+        const seenBaseIds = new Set();
+        const selected = [];
+        const seenFamilies = new Set();
+        anchors.forEach((trial) => {
+          const baseId = trial.stimulus_id || trial.trial_id || JSON.stringify(trial.labels);
+          if (!seenBaseIds.has(baseId)) {
+            seenBaseIds.add(baseId);
+            selected.push(cloneTrial(trial));
+            const familyKey = this.getProportionFamilyKey(trial);
+            if (familyKey) {
+              seenFamilies.add(familyKey);
+            }
+          }
+        });
+        fillerPool.forEach((trial) => {
+          if (selected.length >= targetSelectionCount) {
+            return;
+          }
+          const baseId = trial.stimulus_id || trial.trial_id || JSON.stringify(trial.labels);
+          const familyKey = this.getProportionFamilyKey(trial);
+          if (seenBaseIds.has(baseId) || !familyKey || seenFamilies.has(familyKey)) {
+            return;
+          }
+          seenBaseIds.add(baseId);
+          seenFamilies.add(familyKey);
+          selected.push(cloneTrial(trial));
+        });
+        fillerPool.forEach((trial) => {
+          if (selected.length >= targetSelectionCount) {
+            return;
+          }
+          const baseId = trial.stimulus_id || trial.trial_id || JSON.stringify(trial.labels);
+          if (seenBaseIds.has(baseId)) {
+            return;
+          }
+          seenBaseIds.add(baseId);
+          selected.push(trial);
+        });
+        while (selected.length < targetSelectionCount && fillerPool.length) {
+          selected.push(cloneTrial(fillerPool[selected.length % fillerPool.length]));
+        }
+        trials = selected.slice(0, targetSelectionCount);
       }
       if (block.randomize !== false) {
         const rng = createSeededRng(hashString(`${this.sessionId}-${block.name}-proportion-order`));
         trials = shuffleWithRng(trials, rng);
       }
       return trials;
+    }
+
+    getProportionFamilyKey(trial) {
+      if (!trial || trial.format !== "joint") {
+        return null;
+      }
+      return String(trial.distribution_family || trial.stimulus_id || trial.trial_id || "");
+    }
+
+    getExtremeProportionTrials(trials) {
+      if (!trials.length) {
+        return [];
+      }
+      const scoredTrials = trials.map((trial) => {
+        const labels = inferTrialLabels(
+          trial,
+          trial.format === "joint" ? this.requestedProportionBoxCount : DEFAULT_PROPORTION_BOX_COUNT
+        );
+        const values = labels.map((label) => Number(trial[label] || 0));
+        return {
+          trial,
+          minValue: Math.min(...values),
+          maxValue: Math.max(...values)
+        };
+      });
+      const smallest = scoredTrials.reduce((best, candidate) =>
+        candidate.minValue < best.minValue ? candidate : best
+      );
+      const largest = scoredTrials.reduce((best, candidate) =>
+        candidate.maxValue > best.maxValue ? candidate : best
+      );
+      if (smallest.trial === largest.trial) {
+        return [smallest.trial];
+      }
+      return [smallest.trial, largest.trial];
+    }
+
+    prepareProportionTrial(trial) {
+      const nextTrial = cloneTrial(trial);
+      const labels = inferTrialLabels(
+        nextTrial,
+        nextTrial.format === "joint" ? this.requestedProportionBoxCount : DEFAULT_PROPORTION_BOX_COUNT
+      );
+      nextTrial.labels = labels.slice();
+      if (nextTrial.format !== "joint") {
+        return nextTrial;
+      }
+      const sortedValues = labels
+        .map((label) => Number(nextTrial[label] || 0))
+        .sort((a, b) => a - b);
+      const orderedLabels =
+        this.proportionJointOrderMode === "descending" ? labels.slice().reverse() : labels.slice();
+      orderedLabels.forEach((label, index) => {
+        nextTrial[label] = sortedValues[index];
+      });
+      nextTrial.proportion_joint_label_order = this.proportionJointOrderMode;
+      return nextTrial;
     }
 
     async runNumerosityBlock(block, blockIndex) {
@@ -2160,6 +2884,33 @@
       if (block.randomize !== false) {
         const rng = createSeededRng(hashString(`${this.participantId}-${block.name}-order`));
         trialSets = shuffleWithRng(trialSets, rng);
+      }
+      if (!block.practice && trialSets.length) {
+        const practiceSelection = this.selectNumerosityPracticeTrialSet(block, trialSets);
+        const practiceTrialSet = practiceSelection.practiceTrialSet;
+        trialSets = practiceSelection.mainTrialSets;
+        if (practiceTrialSet) {
+          await this.showPracticeStartScreen(block);
+          const practiceContext = {
+            block: {
+              ...block,
+              name: `${block.name} Practice`,
+              practice: true
+            },
+            blockIndex,
+            condition,
+            evaluationMode: parts.evaluationMode,
+            availabilityMode: parts.availabilityMode,
+            trialSet: practiceTrialSet,
+            trialSetIndex: -1
+          };
+          if (parts.evaluationMode === "separate") {
+            await this.runSeparateNumerosityTrialSet(practiceContext);
+          } else {
+            await this.runJointNumerosityTrialSet(practiceContext);
+          }
+          await this.showPracticeEndScreen();
+        }
       }
       for (let trialSetIndex = 0; trialSetIndex < trialSets.length; trialSetIndex += 1) {
         const trialSet = trialSets[trialSetIndex];
@@ -2199,24 +2950,32 @@
         const trialStartTime = nowIso();
         await this.screenManager.showMessage(this.config.taskSettings.numerosity.readyText, this.config.timing.readyMs);
         if (this.config.timing.fixationEnabled) {
-          await this.screenManager.showMessage("+", this.config.timing.fixationMs, "fixation");
+          await this.screenManager.showMessage(FIXATION_SYMBOL, this.config.timing.fixationMs, "fixation");
         }
         let stimulusOnsetTime = null;
         let displayOffsetTime = null;
         let measuredDisplayDuration = null;
         if (context.availabilityMode === "brief") {
-          this.numerosityRenderer.renderSingle(stimulus);
+          this.numerosityRenderer.renderSingle(stimulus, {
+            isPractice: Boolean(context.block.practice)
+          });
           const timing = await waitRafDuration(this.config.timing.briefDisplayMs);
           stimulusOnsetTime = timing.onset;
           displayOffsetTime = timing.offset;
           measuredDisplayDuration = timing.actualDuration;
           await this.screenManager.showMessage("", this.config.timing.blankMs);
         } else {
-          const view = this.numerosityRenderer.renderSingle(stimulus);
+          const view = this.numerosityRenderer.renderSingle(stimulus, {
+            isPractice: Boolean(context.block.practice)
+          });
           stimulusOnsetTime = performance.now();
           const responseInfo = await this.responseManager.collectSingleIntegerResponseEmbedded(
             view.stage,
-            this.config.taskSettings.numerosity.promptSeparate
+            getNumerosityPrompt(context.evaluationMode, context.availabilityMode),
+            undefined,
+            {
+              isPractice: Boolean(context.block.practice)
+            }
           );
           displayOffsetTime = responseInfo.responseTime;
           measuredDisplayDuration = displayOffsetTime - stimulusOnsetTime;
@@ -2255,7 +3014,11 @@
           continue;
         }
         const responseInfo = await this.responseManager.collectSingleIntegerResponse(
-          this.config.taskSettings.numerosity.promptSeparate
+          getNumerosityPrompt(context.evaluationMode, context.availabilityMode),
+          undefined,
+          {
+            isPractice: Boolean(context.block.practice)
+          }
         );
         if (context.availabilityMode === "visible") {
           displayOffsetTime = responseInfo.responseTime;
@@ -2308,25 +3071,32 @@
       const trialStartTime = nowIso();
       await this.screenManager.showMessage(this.config.taskSettings.numerosity.readyText, this.config.timing.readyMs);
       if (this.config.timing.fixationEnabled) {
-        await this.screenManager.showMessage("+", this.config.timing.fixationMs, "fixation");
+        await this.screenManager.showMessage(FIXATION_SYMBOL, this.config.timing.fixationMs, "fixation");
       }
       let stimulusOnsetTime = null;
       let displayOffsetTime = null;
       let measuredDisplayDuration = null;
       if (context.availabilityMode === "brief") {
-        this.numerosityRenderer.renderJoint(stimuli);
+        this.numerosityRenderer.renderJoint(stimuli, {
+          isPractice: Boolean(context.block.practice)
+        });
         const timing = await waitRafDuration(this.config.timing.briefDisplayMs);
         stimulusOnsetTime = timing.onset;
         displayOffsetTime = timing.offset;
         measuredDisplayDuration = timing.actualDuration;
         await this.screenManager.showMessage("", this.config.timing.blankMs);
       } else {
-        const view = this.numerosityRenderer.renderJoint(stimuli);
+        const view = this.numerosityRenderer.renderJoint(stimuli, {
+          isPractice: Boolean(context.block.practice)
+        });
         stimulusOnsetTime = performance.now();
         const responseInfo = await this.responseManager.collectJointIntegerResponsesEmbedded(
           view.stage,
           context.trialSet.arrays.map((arrayDef) => arrayDef.label),
-          this.config.taskSettings.numerosity.promptJoint
+          getNumerosityPrompt(context.evaluationMode, context.availabilityMode),
+          {
+            isPractice: Boolean(context.block.practice)
+          }
         );
         displayOffsetTime = responseInfo.responseTime;
         measuredDisplayDuration = displayOffsetTime - stimulusOnsetTime;
@@ -2368,7 +3138,10 @@
       }
       const responseInfo = await this.responseManager.collectJointIntegerResponses(
         context.trialSet.arrays.map((arrayDef) => arrayDef.label),
-        this.config.taskSettings.numerosity.promptJoint
+        getNumerosityPrompt(context.evaluationMode, context.availabilityMode),
+        {
+          isPractice: Boolean(context.block.practice)
+        }
       );
       if (context.availabilityMode === "visible") {
         displayOffsetTime = responseInfo.responseTime;
@@ -2411,13 +3184,29 @@
     }
 
     async runProportionBlock(block, blockIndex) {
-      const trials = this.getProportionTrials(block);
+      let trials = this.getProportionTrials(block);
+      if (!block.practice && trials.length) {
+        const practiceTrial = cloneTrial(trials[0]);
+        trials = trials.slice(1);
+        await this.showPracticeStartScreen(block);
+        await this.runSingleProportionTrial({
+          block: {
+            ...block,
+            name: `${block.name} Practice`,
+            practice: true
+          },
+          blockIndex,
+          trial: practiceTrial,
+          isPractice: true
+        });
+        await this.showPracticeEndScreen();
+      }
       for (let trialIndex = 0; trialIndex < trials.length; trialIndex += 1) {
         await this.runSingleProportionTrial({ block, blockIndex, trial: trials[trialIndex] });
       }
     }
 
-    async runSingleProportionTrial({ block, blockIndex, trial }) {
+    async runSingleProportionTrial({ block, blockIndex, trial, isPractice }) {
       const startTime = nowIso();
       const format = block.format || trial.format;
       const labels = inferTrialLabels(
@@ -2426,12 +3215,14 @@
       );
       const labelValueFields = buildLabelValueFields(labels, trial, true);
       if (this.config.timing.fixationEnabled && this.config.timing.fixationMs > 0) {
-        await this.screenManager.showMessage("+", this.config.timing.fixationMs, "fixation");
+        await this.screenManager.showMessage(FIXATION_SYMBOL, this.config.timing.fixationMs, "fixation");
       }
       const view = this.proportionRenderer.renderTrial(trial, {
         format,
         showTargetLabelInSeparate: this.config.taskSettings.proportion.showTargetLabelInSeparate,
-        boxCount: labels.length
+        boxCount: labels.length,
+        requireTotal100: this.config.taskSettings.proportion.requireJointTotal100,
+        isPractice: Boolean(isPractice || block.practice)
       });
       const stimulusOnset = performance.now();
       if (format === "joint") {
@@ -2464,6 +3255,7 @@
             format,
             judgment_type: "estimate",
             number_of_boxes: labels.length,
+            proportion_joint_label_order: this.proportionJointOrderMode,
             target_label: label,
             ...labelValueFields,
             target_true_proportion: targetValue,
@@ -2499,6 +3291,7 @@
           format,
           judgment_type: "estimate",
           number_of_boxes: labels.length,
+          proportion_joint_label_order: this.proportionJointOrderMode,
           target_label: trial.target_label,
           ...labelValueFields,
           target_true_proportion: targetValue,
@@ -2590,6 +3383,7 @@
         condition: query.condition,
         counterbalancingAssignment: query.counterbalancingAssignment,
         task: query.task,
+        number_of_estimates: query.number_of_estimates,
         number_of_trials: query.number_of_trials,
         numerosity_range: query.numerosity_range,
         brief_display_ms: query.brief_display_ms

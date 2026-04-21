@@ -1,5 +1,20 @@
-/* Example Qualtrics integration snippet.
-   Paste inside Qualtrics question JavaScript and host app files where Qualtrics can reach them. */
+/* Qualtrics integration snippet.
+   Use this inside a Text / Graphic question whose HTML is exactly:
+   <div id="behavioral-experiment-root"></div>
+
+   Recommended Embedded Data fields:
+   - participant_id
+   - task
+   - counterbalance_assignment
+   - number_of_estimates
+   - number_of_arrays
+   - number_of_boxes
+   - numerosity_range
+   - brief_display_ms
+   - experiment_data_json
+   - experiment_metadata_json
+   - experiment_complete
+*/
 
 Qualtrics.SurveyEngine.addOnload(function () {
   var assetVersion = String(Date.now());
@@ -31,9 +46,9 @@ Qualtrics.SurveyEngine.addOnload(function () {
   document.head.appendChild(inlineStyle);
 
   container.id = "behavioral-experiment-root";
-  this.getQuestionContainer().innerHTML = "";
-  this.getQuestionContainer().appendChild(container);
-  this.hideNextButton();
+  q.getQuestionContainer().innerHTML = "";
+  q.getQuestionContainer().appendChild(container);
+  q.hideNextButton();
 
   window.__BEHAVIORAL_EXPERIMENT_DISABLE_AUTO_START = true;
 
@@ -42,7 +57,7 @@ Qualtrics.SurveyEngine.addOnload(function () {
     sessionId: "${e://Field/ResponseID}",
     counterbalancingAssignment: "${e://Field/counterbalance_assignment}",
     task: "${e://Field/task}",
-    numberOfTrials: "${e://Field/number_of_trials}",
+    numberOfEstimates: "${e://Field/number_of_estimates}",
     numberOfArrays: "${e://Field/number_of_arrays}",
     numberOfBoxes: "${e://Field/number_of_boxes}",
     numerosityRange: "${e://Field/numerosity_range}",
@@ -63,6 +78,15 @@ Qualtrics.SurveyEngine.addOnload(function () {
     });
   }
 
+  function handleComplete(event) {
+    if (!event || !event.detail) return;
+    Qualtrics.SurveyEngine.setEmbeddedData("experiment_data_json", JSON.stringify(event.detail.rows));
+    Qualtrics.SurveyEngine.setEmbeddedData("experiment_metadata_json", JSON.stringify(event.detail.metadata));
+    Qualtrics.SurveyEngine.setEmbeddedData("experiment_complete", "1");
+    q.showNextButton();
+    window.removeEventListener("behavioral-experiment:complete", handleComplete);
+  }
+
   function startExperiment() {
     window.initExperiment({
       mountEl: "#behavioral-experiment-root"
@@ -77,15 +101,7 @@ Qualtrics.SurveyEngine.addOnload(function () {
     });
   }
 
-  function handleComplete(event) {
-    if (!event || !event.detail) return;
-    Qualtrics.SurveyEngine.setEmbeddedData("experiment_data_json", JSON.stringify(event.detail.rows));
-    Qualtrics.SurveyEngine.setEmbeddedData("experiment_metadata_json", JSON.stringify(event.detail.metadata));
-    Qualtrics.SurveyEngine.setEmbeddedData("experiment_complete", "1");
-    q.showNextButton();
-    window.removeEventListener("behavioral-experiment:complete", handleComplete);
-  }
-
+  window.removeEventListener("behavioral-experiment:complete", handleComplete);
   window.addEventListener("behavioral-experiment:complete", handleComplete);
 
   var oldCss = document.getElementById("behavioral-experiment-styles");
@@ -122,4 +138,24 @@ Qualtrics.SurveyEngine.addOnload(function () {
   });
   observer.observe(container, { childList: true, subtree: true });
   window.__BEHAVIORAL_EXPERIMENT_INPUT_OBSERVER = observer;
+});
+
+Qualtrics.SurveyEngine.addOnUnload(function () {
+  var css = document.getElementById("behavioral-experiment-styles");
+  if (css) {
+    css.remove();
+  }
+  var script = document.getElementById("behavioral-experiment-script");
+  if (script) {
+    script.remove();
+  }
+  var overrides = document.getElementById("behavioral-experiment-inline-overrides");
+  if (overrides) {
+    overrides.remove();
+  }
+  if (window.__BEHAVIORAL_EXPERIMENT_INPUT_OBSERVER) {
+    window.__BEHAVIORAL_EXPERIMENT_INPUT_OBSERVER.disconnect();
+    window.__BEHAVIORAL_EXPERIMENT_INPUT_OBSERVER = null;
+  }
+  window.__BEHAVIORAL_EXPERIMENT_DISABLE_AUTO_START = true;
 });

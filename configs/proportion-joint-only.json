@@ -3,9 +3,9 @@
     "title": "Proportion Judgment Task",
     "instructionsTitle": "Proportion Judgment Task",
     "instructionsText": [
-      "Preview configuration: joint evaluation for the proportion task without a running total.",
-      "Enter open-ended percentages for all five labeled blocks.",
-      "The entries do not need to total 100."
+      "You'll see one bar split into colored sections.",
+      "Type your best guess for how much of the bar each section takes up.",
+      "Your answers do not have to add up to 100."
     ]
   },
   "export": {

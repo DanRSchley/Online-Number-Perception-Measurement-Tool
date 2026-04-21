@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Behavioral Experiment Smoke Runner</title>
+  <style>
+    body { font-family: sans-serif; margin: 0; padding: 16px; }
+    iframe { width: 1440px; height: 2200px; border: 1px solid #ccc; }
+    pre { white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <pre id="status">Running...</pre>
+  <iframe id="app-frame"></iframe>
+  <script>
+    (function () {
+      const status = document.getElementById("status");
+      const frame = document.getElementById("app-frame");
+      const params = new URLSearchParams(window.location.search);
+      const appParams = new URLSearchParams();
+      params.forEach((value, key) => {
+        if (key !== "timeout_ms") {
+          appParams.set(key, value);
+        }
+      });
+      const timeoutMs = Number(params.get("timeout_ms") || 30000);
+      frame.src = "/?" + appParams.toString();
+
+      let lastActionAt = 0;
+      let done = false;
+
+      function setStatus(payload) {
+        status.textContent = JSON.stringify(payload, null, 2);
+      }
+
+      function clickFirstButton(doc) {
+        const buttons = Array.from(doc.querySelectorAll("button")).filter((button) => {
+          const text = (button.textContent || "").trim();
+          return text && !button.disabled;
+        });
+        if (!buttons.length) return false;
+        buttons[0].click();
+        return true;
+      }
+
+      function fillInputs(doc) {
+        const inputs = Array.from(doc.querySelectorAll("input"))
+          .filter((input) => !input.disabled && input.type !== "hidden");
+        if (!inputs.length) return false;
+        const totalBox = Array.from(doc.querySelectorAll(".percentage-total-value")).length > 0;
+        const hasPercentUnit = Array.from(doc.querySelectorAll(".percentage-suffix,.percent-unit,.response-unit"))
+          .some((node) => /%/.test(node.textContent || ""));
+        const valueInputs = inputs.filter((input) => input.type === "text" || input.type === "number");
+        if (!valueInputs.length) return false;
+
+        if (hasPercentUnit && valueInputs.length > 1) {
+          const base = Math.floor(100 / valueInputs.length);
+          let remainder = 100 - base * valueInputs.length;
+          valueInputs.forEach((input, index) => {
+            const value = base + (index === valueInputs.length - 1 ? remainder : 0);
+            input.value = String(value);
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+            input.dispatchEvent(new Event("change", { bubbles: true }));
+          });
+          return true;
+        }
+
+        if (hasPercentUnit) {
+          valueInputs[0].value = "50";
+          valueInputs[0].dispatchEvent(new Event("input", { bubbles: true }));
+          valueInputs[0].dispatchEvent(new Event("change", { bubbles: true }));
+          return true;
+        }
+
+        valueInputs.forEach((input, index) => {
+          input.value = String(12 + index);
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+          input.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+        return true;
+      }
+
+      function tick() {
+        if (done) return;
+        const now = Date.now();
+        if (now - lastActionAt < 150) {
+          setTimeout(tick, 100);
+          return;
+        }
+
+        let doc;
+        try {
+          doc = frame.contentDocument;
+        } catch (error) {
+          setStatus({ status: "fail", reason: "iframe_access_error", error: String(error) });
+          done = true;
+          return;
+        }
+        if (!doc || !doc.body) {
+          setTimeout(tick, 100);
+          return;
+        }
+
+        const panelHeading = doc.querySelector(".panel h1");
+        if (panelHeading && /Experiment Error/i.test(panelHeading.textContent || "")) {
+          setStatus({
+            status: "fail",
+            reason: "experiment_error",
+            message: doc.querySelector(".panel p") ? doc.querySelector(".panel p").textContent.trim() : ""
+          });
+          done = true;
+          return;
+        }
+
+        if (panelHeading && /Finished/i.test(panelHeading.textContent || "")) {
+          setStatus({ status: "pass", task: params.get("task"), url: frame.src });
+          done = true;
+          return;
+        }
+
+        if (fillInputs(doc)) {
+          lastActionAt = now;
+          setTimeout(() => {
+            clickFirstButton(doc);
+          }, 50);
+          setTimeout(tick, 200);
+          return;
+        }
+
+        if (clickFirstButton(doc)) {
+          lastActionAt = now;
+          setTimeout(tick, 200);
+          return;
+        }
+
+        setTimeout(tick, 100);
+      }
+
+      setTimeout(() => {
+        if (!done) {
+          setStatus({ status: "fail", reason: "timeout", task: params.get("task"), url: frame.src });
+          done = true;
+        }
+      }, timeoutMs);
+
+      setTimeout(tick, 300);
+    })();
+  </script>
+</body>
+</html>

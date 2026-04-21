@@ -3,8 +3,8 @@
     "title": "Numerosity Task",
     "instructionsTitle": "Dot Estimation Task",
     "instructionsText": [
-      "Preview configuration: joint evaluation with brief removed presentation.",
-      "You will see four arrays together, the display will disappear, and then you will answer."
+      "You'll see a few groups of dots on the screen at the same time.",
+      "The dots will disappear before you answer, so use your intuition rather than trying to count."
     ]
   },
   "export": {
