@@ -145,7 +145,8 @@
   const SUPPORTED_NUMEROSITY_ARRAY_COUNTS = [2, 4, 6];
     // Online numerical-cognition studies commonly use roughly 40-64 test trials.
     // Use 40 as the conservative default for Qualtrics deployments unless overridden.
-    const DEFAULT_QUALTRICS_TRIALS = 40;
+    const DEFAULT_QUALTRICS_SEPARATE_TRIALS = 40;
+    const DEFAULT_QUALTRICS_JOINT_TRIALS = 10;
     const DEFAULT_PROPORTION_BOX_COUNT = 5;
     const PROPORTION_BOX_COUNT_MIN = 2;
     const PROPORTION_BOX_COUNT_MAX = 10;
@@ -2412,15 +2413,25 @@
         deriveParityAssignment(this.participantId || this.sessionId);
       this.proportionJointOrderMode =
         this.counterbalancingAssignment === "odd" ? "descending" : "ascending";
-      this.requestedEstimateCount =
+      this.legacyRequestedEstimateCount =
         parsePositiveInteger(this.embeddedAssignments.numberOfEstimates) ||
         parsePositiveInteger(this.embeddedAssignments.number_of_estimates) ||
         parsePositiveInteger(this.embeddedAssignments.numberOfTrials) ||
         parsePositiveInteger(this.embeddedAssignments.number_of_trials) ||
         parsePositiveInteger(this.queryParams.number_of_estimates) ||
         parsePositiveInteger(this.queryParams.number_of_trials) ||
-        (this.isQualtricsRuntime ? DEFAULT_QUALTRICS_TRIALS : null);
-      this.requestedTrialCount = this.requestedEstimateCount;
+        null;
+      this.requestedSeparateTrialCount =
+        parsePositiveInteger(this.embeddedAssignments.numberOfTrialsSeparateEvaluation) ||
+        parsePositiveInteger(this.embeddedAssignments.number_of_trials_separate_evaluation) ||
+        parsePositiveInteger(this.queryParams.number_of_trials_separate_evaluation) ||
+        this.legacyRequestedEstimateCount ||
+        (this.isQualtricsRuntime ? DEFAULT_QUALTRICS_SEPARATE_TRIALS : null);
+      this.requestedJointTrialCount =
+        parsePositiveInteger(this.embeddedAssignments.numberOfTrialsJointEvaluation) ||
+        parsePositiveInteger(this.embeddedAssignments.number_of_trials_joint_evaluation) ||
+        parsePositiveInteger(this.queryParams.number_of_trials_joint_evaluation) ||
+        null;
       this.requestedNumerosityArrayCount = parseChoiceInteger(
         this.embeddedAssignments.numberOfArrays ||
           this.embeddedAssignments.number_of_arrays ||
@@ -2436,6 +2447,13 @@
         PROPORTION_BOX_COUNT_MAX,
         DEFAULT_PROPORTION_BOX_COUNT
       );
+      if (this.requestedJointTrialCount === null && this.legacyRequestedEstimateCount) {
+        const jointDivisor = Math.max(this.requestedNumerosityArrayCount, this.requestedProportionBoxCount || 1);
+        this.requestedJointTrialCount = Math.max(1, Math.ceil(this.legacyRequestedEstimateCount / jointDivisor));
+      }
+      if (this.requestedJointTrialCount === null && this.isQualtricsRuntime) {
+        this.requestedJointTrialCount = DEFAULT_QUALTRICS_JOINT_TRIALS;
+      }
       this.safeNumerosityMax = computeSafeNumerosityMax(
         this.config,
         this.requestedNumerosityArrayCount
@@ -2463,7 +2481,9 @@
       });
       this.logger.metadata.qualtrics_overrides = {
         task: this.embeddedAssignments.task || this.queryParams.task || null,
-        number_of_estimates: this.requestedEstimateCount,
+        number_of_estimates_legacy: this.legacyRequestedEstimateCount,
+        number_of_trials_separate_evaluation: this.requestedSeparateTrialCount,
+        number_of_trials_joint_evaluation: this.requestedJointTrialCount,
         number_of_arrays: this.requestedNumerosityArrayCount,
         number_of_boxes: this.requestedProportionBoxCount,
         proportion_joint_label_order: this.proportionJointOrderMode,
@@ -2729,8 +2749,13 @@
       if (block.maxTrials) {
         return block.maxTrials;
       }
-      if (this.requestedTrialCount) {
-        return Math.max(1, Math.ceil(this.requestedTrialCount / this.requestedNumerosityArrayCount));
+      const condition = this.resolveNumerosityCondition(block);
+      const parts = formatConditionParts(condition);
+      if (parts.evaluationMode === "joint" && this.requestedJointTrialCount) {
+        return this.requestedJointTrialCount;
+      }
+      if (parts.evaluationMode === "separate" && this.requestedSeparateTrialCount) {
+        return this.requestedSeparateTrialCount;
       }
       return null;
     }
@@ -2747,12 +2772,12 @@
         });
       }
       trials = trials.map((trial) => this.prepareProportionTrial(trial));
-      const baseDesiredCount = block.practice ? block.maxTrials : (this.requestedTrialCount || block.maxTrials || null);
-      const effectiveJointCount =
-        (block.format || "").toLowerCase() === "joint" && baseDesiredCount
-          ? Math.max(1, Math.ceil(baseDesiredCount / this.requestedProportionBoxCount))
-          : baseDesiredCount;
-      const desiredCount = effectiveJointCount;
+      const isJointFormat = (block.format || "").toLowerCase() === "joint";
+      const desiredCount = block.practice
+        ? block.maxTrials
+        : (isJointFormat
+            ? (this.requestedJointTrialCount || block.maxTrials || null)
+            : (this.requestedSeparateTrialCount || block.maxTrials || null));
       if (desiredCount) {
         const targetSelectionCount = desiredCount + (block.practice ? 0 : 1);
         const anchors = this.getExtremeProportionTrials(trials).slice(0, Math.min(2, desiredCount));
@@ -3335,11 +3360,7 @@
       if (shouldAutoDownload) {
         doDownload();
       }
-      this.screenManager.showEndScreen(
-        this.config.experiment.endTitle,
-        this.config.experiment.endText,
-        runningInQualtrics ? null : doDownload
-      );
+      this.screenManager.clear();
     }
   }
 
@@ -3385,8 +3406,12 @@
         task: query.task,
         number_of_estimates: query.number_of_estimates,
         number_of_trials: query.number_of_trials,
+        number_of_trials_joint_evaluation: query.number_of_trials_joint_evaluation,
+        number_of_trials_separate_evaluation: query.number_of_trials_separate_evaluation,
         numerosity_range: query.numerosity_range,
-        brief_display_ms: query.brief_display_ms
+        brief_display_ms: query.brief_display_ms,
+        number_of_arrays: query.number_of_arrays,
+        number_of_boxes: query.number_of_boxes
       };
     const taskConfig =
       resolveTaskConfig(assignments.task) ||

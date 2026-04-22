@@ -6,7 +6,8 @@
    - participant_id
    - task
    - counterbalance_assignment
-   - number_of_estimates
+   - number_of_trials_joint_evaluation
+   - number_of_trials_separate_evaluation
    - number_of_arrays
    - number_of_boxes
    - numerosity_range
@@ -25,21 +26,27 @@ Qualtrics.SurveyEngine.addOnload(function () {
 
   inlineStyle.id = "behavioral-experiment-inline-overrides";
   inlineStyle.textContent =
-    "#behavioral-experiment-root{width:100%;max-width:100%;overflow-x:hidden;}" +
-    "#behavioral-experiment-root .screen{width:100% !important;max-width:100% !important;overflow:hidden;}" +
-    "#behavioral-experiment-root .screen--message{min-height:clamp(220px,46vh,380px) !important;display:flex !important;align-items:center !important;justify-content:center !important;padding:0 !important;}" +
-    "#behavioral-experiment-root .screen--message.fixation{min-height:clamp(260px,54vh,440px) !important;}" +
-    "#behavioral-experiment-root .message{width:100% !important;text-align:center !important;}" +
-    "#behavioral-experiment-root .fixation{display:block !important;width:100% !important;text-align:center !important;font-size:clamp(2.4rem,4vw,3.4rem) !important;line-height:1 !important;}" +
-    "#behavioral-experiment-root .canvas-stage{width:min(680px,82vw) !important;max-width:100% !important;overflow:hidden !important;margin:0 auto !important;}" +
-    "#behavioral-experiment-root .stimulus-canvas{display:block !important;width:min(680px,82vw) !important;max-width:100% !important;height:auto !important;margin:0 auto !important;}" +
-    "#behavioral-experiment-root .bar-stage{width:min(760px,88vw) !important;max-width:100% !important;margin:0 auto !important;}" +
-    "#behavioral-experiment-root .bar-svg{width:min(760px,88vw) !important;max-width:100% !important;height:auto !important;}" +
-    "#behavioral-experiment-root .response-panel{width:min(640px,88vw) !important;max-width:100% !important;}" +
-    "#behavioral-experiment-root .response-grid{width:min(640px,88vw) !important;max-width:100% !important;}" +
+    ".QuestionOuter,.QuestionBody,.QuestionText{max-width:100% !important;width:100% !important;}" +
+    "#behavioral-experiment-root{width:min(1200px,88vw);max-width:88vw;margin:0 auto;overflow-x:hidden;}" +
+    "#behavioral-experiment-root .screen{width:100% !important;max-width:100% !important;overflow:hidden;display:flex !important;flex-direction:column !important;align-items:center !important;justify-content:flex-start !important;}" +
+    "#behavioral-experiment-root .screen--stack{align-items:center !important;justify-content:flex-start !important;}" +
+    "#behavioral-experiment-root .panel{width:min(860px,84vw) !important;max-width:84vw !important;margin:0 auto !important;box-sizing:border-box !important;}" +
+    "#behavioral-experiment-root .screen--message{min-height:clamp(240px,44vh,500px) !important;display:flex !important;align-items:center !important;justify-content:center !important;padding:0 !important;}" +
+    "#behavioral-experiment-root .screen--message.fixation{min-height:clamp(340px,62vh,700px) !important;display:flex !important;align-items:center !important;justify-content:center !important;padding:0 !important;}" +
+    "#behavioral-experiment-root .message{width:100% !important;text-align:center !important;margin-left:auto !important;margin-right:auto !important;}" +
+    "#behavioral-experiment-root .fixation{display:flex !important;align-items:center !important;justify-content:center !important;width:100% !important;min-height:clamp(340px,62vh,700px) !important;text-align:center !important;font-size:clamp(2rem,3.8vw,3rem) !important;line-height:1 !important;}" +
+    "#behavioral-experiment-root .canvas-stage{width:min(820px,78vw) !important;max-width:100% !important;overflow:hidden !important;margin:0 auto !important;}" +
+    "#behavioral-experiment-root .stimulus-canvas{display:block !important;width:min(820px,78vw) !important;max-width:100% !important;height:auto !important;margin:0 auto !important;}" +
+    "#behavioral-experiment-root .bar-stage{width:min(860px,78vw) !important;max-width:100% !important;margin:0 auto !important;}" +
+    "#behavioral-experiment-root .bar-svg{display:block !important;width:min(860px,78vw) !important;max-width:100% !important;height:auto !important;margin:0 auto !important;}" +
+    "#behavioral-experiment-root .bar-heading{max-width:min(860px,78vw) !important;margin:0 auto !important;text-align:left !important;}" +
+    "#behavioral-experiment-root .response-panel{width:min(640px,80vw) !important;max-width:100% !important;margin:0 auto !important;}" +
+    "#behavioral-experiment-root .response-grid{width:min(640px,80vw) !important;max-width:100% !important;margin:0 auto !important;}" +
     "#behavioral-experiment-root .response-input-row{display:flex !important;align-items:center !important;justify-content:center !important;gap:8px !important;}" +
-    "#behavioral-experiment-root .response-input-row input{width:min(96px,100%) !important;min-width:0 !important;}" +
-    "#behavioral-experiment-root .response-unit{font-size:0.95rem !important;color:#5f6979 !important;white-space:nowrap !important;}" +
+    "#behavioral-experiment-root .response-input-row input{width:min(92px,100%) !important;min-width:0 !important;}" +
+    "#behavioral-experiment-root .response-unit{font-size:0.92rem !important;color:#5f6979 !important;white-space:nowrap !important;}" +
+    "#behavioral-experiment-root h1,#behavioral-experiment-root h2{font-size:calc(100% - 2pt) !important;text-align:center !important;margin-left:auto !important;margin-right:auto !important;}" +
+    "#behavioral-experiment-root .bar-heading h2,#behavioral-experiment-root .bar-heading p{text-align:left !important;}" +
     "#behavioral-experiment-root input[type='number']::-webkit-outer-spin-button," +
     "#behavioral-experiment-root input[type='number']::-webkit-inner-spin-button{-webkit-appearance:none !important;margin:0 !important;}" +
     "#behavioral-experiment-root input[type='number']{-moz-appearance:textfield !important;appearance:textfield !important;}";
@@ -57,7 +64,8 @@ Qualtrics.SurveyEngine.addOnload(function () {
     sessionId: "${e://Field/ResponseID}",
     counterbalancingAssignment: "${e://Field/counterbalance_assignment}",
     task: "${e://Field/task}",
-    numberOfEstimates: "${e://Field/number_of_estimates}",
+    numberOfTrialsJointEvaluation: "${e://Field/number_of_trials_joint_evaluation}",
+    numberOfTrialsSeparateEvaluation: "${e://Field/number_of_trials_separate_evaluation}",
     numberOfArrays: "${e://Field/number_of_arrays}",
     numberOfBoxes: "${e://Field/number_of_boxes}",
     numerosityRange: "${e://Field/numerosity_range}",
@@ -105,13 +113,10 @@ Qualtrics.SurveyEngine.addOnload(function () {
   window.addEventListener("behavioral-experiment:complete", handleComplete);
 
   var oldCss = document.getElementById("behavioral-experiment-styles");
-  if (oldCss) {
-    oldCss.remove();
-  }
+  if (oldCss) oldCss.remove();
   var oldScript = document.getElementById("behavioral-experiment-script");
-  if (oldScript) {
-    oldScript.remove();
-  }
+  if (oldScript) oldScript.remove();
+
   try {
     delete window.initExperiment;
     delete window.BehavioralExperimentPlatform;
@@ -142,17 +147,11 @@ Qualtrics.SurveyEngine.addOnload(function () {
 
 Qualtrics.SurveyEngine.addOnUnload(function () {
   var css = document.getElementById("behavioral-experiment-styles");
-  if (css) {
-    css.remove();
-  }
+  if (css) css.remove();
   var script = document.getElementById("behavioral-experiment-script");
-  if (script) {
-    script.remove();
-  }
+  if (script) script.remove();
   var overrides = document.getElementById("behavioral-experiment-inline-overrides");
-  if (overrides) {
-    overrides.remove();
-  }
+  if (overrides) overrides.remove();
   if (window.__BEHAVIORAL_EXPERIMENT_INPUT_OBSERVER) {
     window.__BEHAVIORAL_EXPERIMENT_INPUT_OBSERVER.disconnect();
     window.__BEHAVIORAL_EXPERIMENT_INPUT_OBSERVER = null;

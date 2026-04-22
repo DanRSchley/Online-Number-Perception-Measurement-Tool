@@ -43,8 +43,8 @@ py -m http.server 8000
 Then open:
 
 - [http://localhost:8000/](http://localhost:8000/)
-- [http://localhost:8000/?task=numerosity_joint_visible&number_of_estimates=12&number_of_arrays=4&numerosity_range=10-60](http://localhost:8000/?task=numerosity_joint_visible&number_of_estimates=12&number_of_arrays=4&numerosity_range=10-60)
-- [http://localhost:8000/?task=proportion_joint_evaluation&number_of_estimates=24&number_of_boxes=8](http://localhost:8000/?task=proportion_joint_evaluation&number_of_estimates=24&number_of_boxes=8)
+- [http://localhost:8000/?task=numerosity_joint_visible&number_of_trials_joint_evaluation=12&number_of_arrays=4&numerosity_range=10-60](http://localhost:8000/?task=numerosity_joint_visible&number_of_trials_joint_evaluation=12&number_of_arrays=4&numerosity_range=10-60)
+- [http://localhost:8000/?task=proportion_joint_evaluation&number_of_trials_joint_evaluation=24&number_of_boxes=8](http://localhost:8000/?task=proportion_joint_evaluation&number_of_trials_joint_evaluation=24&number_of_boxes=8)
 
 Important:
 
@@ -64,7 +64,7 @@ window.initExperiment({
   embeddedAssignments: {
     task: "numerosity_joint_visible",
     counterbalancingAssignment: "even",
-    numberOfEstimates: 24,
+    numberOfTrialsJointEvaluation: 12,
     numberOfArrays: 4,
     numerosityRange: "10-80"
   }
@@ -84,7 +84,8 @@ The current participant-facing control names are:
 - `task`
 - `participant_id`
 - `counterbalance_assignment`
-- `number_of_estimates`
+- `number_of_trials_joint_evaluation`
+- `number_of_trials_separate_evaluation`
 - `number_of_arrays`
 - `number_of_boxes`
 - `numerosity_range`
@@ -92,6 +93,7 @@ The current participant-facing control names are:
 
 The app still accepts some legacy aliases for backward compatibility, including:
 
+- `number_of_estimates`
 - `number_of_trials`
 - camelCase equivalents such as `numberOfEstimates`
 
@@ -104,9 +106,10 @@ The app still accepts some legacy aliases for backward compatibility, including:
   - if omitted in Qualtrics, the app falls back to the Qualtrics response/session identifier
 - `counterbalance_assignment`
   - controls within-person order mappings such as whether joint proportion uses `A = smallest` or `A = largest`
-- `number_of_estimates`
-  - the participant-facing workload setting
-  - for joint tasks, the app converts this into fewer screens by dividing by the number of groups or boxes and rounding up
+- `number_of_trials_joint_evaluation`
+  - exact number of scored joint-task screens to run
+- `number_of_trials_separate_evaluation`
+  - exact number of scored separate-task screens to run
 - `number_of_arrays`
   - numerosity joint-task control
   - allowed values: `2`, `4`, `6`
@@ -121,7 +124,9 @@ The app still accepts some legacy aliases for backward compatibility, including:
 
 ### Current Defaults
 
-- `number_of_estimates`
+- `number_of_trials_joint_evaluation`
+  - `10` in Qualtrics when not supplied
+- `number_of_trials_separate_evaluation`
   - `40` in Qualtrics when not supplied
 - `number_of_arrays`
   - `4`
@@ -169,7 +174,9 @@ Do not manually set those output fields. The task writes them automatically.
 
 The app records runtime metadata including:
 
-- requested estimate count
+- requested joint trial count
+- requested separate trial count
+- legacy estimate count when a legacy field is used
 - requested number of arrays
 - requested number of boxes
 - numerosity range minimum and maximum
@@ -216,7 +223,8 @@ Proportion rows include fields such as:
 5. Set at least:
 
 - `task`
-- `number_of_estimates`
+- `number_of_trials_joint_evaluation`
+- `number_of_trials_separate_evaluation`
 
 6. Add task-specific fields only when needed:
 
