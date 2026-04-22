@@ -635,6 +635,20 @@
     return output;
   }
 
+  function flattenNumerosityTrialSetsToSingleArrayTrialSets(trialSets) {
+    return (trialSets || []).flatMap((trialSet, trialSetIndex) =>
+      (trialSet.arrays || []).map((arrayDef, arrayIndex) => ({
+        trialSetId: `${trialSet.trialSetId || "TS"}_${arrayDef.label || "A"}_${trialSetIndex + 1}_${arrayIndex + 1}`,
+        arrays: [
+          {
+            ...arrayDef,
+            seed: Number(arrayDef.seed || 0)
+          }
+        ]
+      }))
+    );
+  }
+
   function cloneTrialSetList(trialSets) {
     return (trialSets || []).map(cloneTrialSet);
   }
@@ -2902,6 +2916,9 @@
         this.requestedNumerosityRange.max,
         this.requestedNumerosityArrayCount
       );
+      if (parts.evaluationMode === "separate") {
+        trialSets = flattenNumerosityTrialSetsToSingleArrayTrialSets(trialSets);
+      }
       const desiredTrialSetCount = this.getDesiredNumerosityTrialSetCount(block);
       if (desiredTrialSetCount) {
         trialSets = expandNumerosityTrialSets(trialSets, desiredTrialSetCount);
@@ -2911,9 +2928,25 @@
         trialSets = shuffleWithRng(trialSets, rng);
       }
       if (!block.practice && trialSets.length) {
-        const practiceSelection = this.selectNumerosityPracticeTrialSet(block, trialSets);
-        const practiceTrialSet = practiceSelection.practiceTrialSet;
-        trialSets = practiceSelection.mainTrialSets;
+        let practiceTrialSet = null;
+        if (parts.evaluationMode === "separate") {
+          const dedicatedPracticeSets = rescaleNumerosityTrialSets(
+            this.getNumerosityTrialSets("practiceTrialSets"),
+            this.requestedNumerosityRange.min,
+            this.requestedNumerosityRange.max,
+            this.requestedNumerosityArrayCount
+          );
+          const flattenedPracticeSets = flattenNumerosityTrialSetsToSingleArrayTrialSets(dedicatedPracticeSets);
+          practiceTrialSet = flattenedPracticeSets.length ? cloneTrialSet(flattenedPracticeSets[0]) : null;
+          if (!practiceTrialSet && trialSets.length) {
+            practiceTrialSet = cloneTrialSet(trialSets[0]);
+            trialSets = trialSets.slice(1);
+          }
+        } else {
+          const practiceSelection = this.selectNumerosityPracticeTrialSet(block, trialSets);
+          practiceTrialSet = practiceSelection.practiceTrialSet;
+          trialSets = practiceSelection.mainTrialSets;
+        }
         if (practiceTrialSet) {
           await this.showPracticeStartScreen(block);
           const practiceContext = {
