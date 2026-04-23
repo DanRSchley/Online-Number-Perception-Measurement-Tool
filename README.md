@@ -28,8 +28,8 @@ This project is a browser-based task platform for numerosity and proportion judg
 - `styles.css`
 - `qualtrics/qualtrics-snippet.js`
 - `configs/*.json`
-- `Behavioral Experiment Platform Instructions v2.docx`
-- `Qualtrics Task Setup Guide v4.docx`
+- `App Code Modification Guide.docx`
+- `Qualtrics Embedding Guide.docx`
 
 ## Running Locally
 

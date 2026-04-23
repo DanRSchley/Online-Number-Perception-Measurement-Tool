@@ -45,8 +45,15 @@
     },
     qualtrics: {
       enabled: true,
-      embeddedDataField: "experiment_data",
-      metadataField: "experiment_metadata",
+      metadataSessionField: "experiment_metadata_session_json",
+      metadataRuntimeField: "experiment_metadata_runtime_json",
+      metadataEnvironmentField: "experiment_metadata_environment_json",
+      metadataSettingsField: "experiment_metadata_settings_json",
+      numerosityRowsFieldPrefix: "experiment_response_rows_numerosity_json",
+      proportionRowsFieldPrefix: "experiment_response_rows_proportion_json",
+      numerosityStimuliFieldPrefix: "experiment_stimuli_numerosity_json",
+      proportionStimuliFieldPrefix: "experiment_stimuli_proportion_json",
+      chunkMaxBytes: 15000,
       completionField: "experiment_complete"
     },
     blocks: [],
@@ -508,6 +515,51 @@
     };
   }
 
+  function getUtf8ByteLength(value) {
+    if (typeof TextEncoder !== "undefined") {
+      return new TextEncoder().encode(value).length;
+    }
+    return unescape(encodeURIComponent(value)).length;
+  }
+
+  function chunkJsonString(value, maxBytes) {
+    const chunks = [];
+    const source = String(value || "");
+    if (!source) {
+      return chunks;
+    }
+    let current = "";
+    for (let index = 0; index < source.length; index += 1) {
+      const next = current + source[index];
+      if (current && getUtf8ByteLength(next) > maxBytes) {
+        chunks.push(current);
+        current = source[index];
+      } else {
+        current = next;
+      }
+    }
+    if (current) {
+      chunks.push(current);
+    }
+    return chunks;
+  }
+
+  function buildChunkFieldMap(prefix, value, maxBytes) {
+    const serialized = JSON.stringify(value);
+    const chunks = chunkJsonString(serialized, maxBytes);
+    const output = {};
+    if (!chunks.length) {
+      output[`${prefix}_1`] = "[]";
+      output[`${prefix}_count`] = "1";
+      return output;
+    }
+    chunks.forEach((chunk, index) => {
+      output[`${prefix}_${index + 1}`] = chunk;
+    });
+    output[`${prefix}_count`] = String(chunks.length);
+    return output;
+  }
+
   function parseQueryParams() {
     const params = new URLSearchParams(window.location.search);
     const output = {};
@@ -823,16 +875,62 @@
       }
     }
 
-    writeResults(rows, metadata) {
-      const dataField = this.config.qualtrics.embeddedDataField;
-      const metadataField = this.config.qualtrics.metadataField;
+    writeResults(payload) {
+      const qualtricsConfig = this.config.qualtrics || {};
       const completionField = this.config.qualtrics.completionField;
-      this.setEmbeddedData(dataField, JSON.stringify(rows));
-      this.setEmbeddedData(metadataField, JSON.stringify(metadata));
+      const chunkMaxBytes = qualtricsConfig.chunkMaxBytes || 15000;
+      const metadataSections = payload.metadata_sections || {};
+      const rowSections = payload.row_sections || {};
+      const stimulusSections = payload.stimulus_sections || {};
+
+      this.setEmbeddedData(
+        qualtricsConfig.metadataSessionField,
+        JSON.stringify(metadataSections.session || {})
+      );
+      this.setEmbeddedData(
+        qualtricsConfig.metadataRuntimeField,
+        JSON.stringify(metadataSections.runtime || {})
+      );
+      this.setEmbeddedData(
+        qualtricsConfig.metadataEnvironmentField,
+        JSON.stringify(metadataSections.environment || {})
+      );
+      this.setEmbeddedData(
+        qualtricsConfig.metadataSettingsField,
+        JSON.stringify(metadataSections.settings || {})
+      );
+
+      const namedChunkMaps = [
+        buildChunkFieldMap(
+          qualtricsConfig.numerosityRowsFieldPrefix,
+          rowSections.numerosity || [],
+          chunkMaxBytes
+        ),
+        buildChunkFieldMap(
+          qualtricsConfig.proportionRowsFieldPrefix,
+          rowSections.proportion || [],
+          chunkMaxBytes
+        ),
+        buildChunkFieldMap(
+          qualtricsConfig.numerosityStimuliFieldPrefix,
+          stimulusSections.numerosity || [],
+          chunkMaxBytes
+        ),
+        buildChunkFieldMap(
+          qualtricsConfig.proportionStimuliFieldPrefix,
+          stimulusSections.proportion || [],
+          chunkMaxBytes
+        )
+      ];
+      namedChunkMaps.forEach((fieldMap) => {
+        Object.entries(fieldMap).forEach(([fieldName, fieldValue]) => {
+          this.setEmbeddedData(fieldName, fieldValue);
+        });
+      });
       this.setEmbeddedData(completionField, "1");
       window.dispatchEvent(
         new CustomEvent("behavioral-experiment:complete", {
-          detail: { rows, metadata }
+          detail: payload
         })
       );
     }
@@ -842,28 +940,105 @@
     constructor(sessionInfo) {
       this.sessionInfo = sessionInfo;
       this.rows = [];
-      this.metadata = {
-        experiment_version: sessionInfo.experimentVersion,
-        date_time: nowIso(),
-        counterbalancing_assignment: sessionInfo.counterbalancingAssignment || null,
-        settings_used: sessionInfo.settingsUsed
+      this.metadataSections = {
+        session: {
+          experiment_version: sessionInfo.experimentVersion,
+          date_time: nowIso(),
+          participant_id: sessionInfo.participantId || null,
+          session_id: sessionInfo.sessionId,
+          counterbalancing_assignment: sessionInfo.counterbalancingAssignment || null
+        },
+        runtime: {},
+        environment: getEnvironmentSnapshot(),
+        settings: sessionInfo.settingsUsed
+      };
+      this.stimulusCatalog = {
+        numerosity: [],
+        proportion: []
+      };
+      this.stimulusIndex = {
+        numerosity: new Set(),
+        proportion: new Set()
       };
     }
 
     log(row) {
-      this.rows.push({
-        participant_id: this.sessionInfo.participantId,
-        session_id: this.sessionInfo.sessionId,
-        ...row
-      });
+      this.rows.push({ ...row });
     }
 
     getRows() {
       return this.rows.slice();
     }
 
-    getMetadata() {
-      return { ...this.metadata };
+    setRuntimeMetadata(name, value) {
+      this.metadataSections.runtime[name] = value;
+    }
+
+    registerNumerosityStimulus(context) {
+      const stimulusId = context.trialSet.trialSetId || `numerosity_${context.blockIndex}_${context.trialSetIndex || 0}`;
+      if (this.stimulusIndex.numerosity.has(stimulusId)) {
+        return stimulusId;
+      }
+      this.stimulusIndex.numerosity.add(stimulusId);
+      this.stimulusCatalog.numerosity.push({
+        stimulus_id: stimulusId,
+        condition: context.condition,
+        evaluation_mode: context.evaluationMode,
+        availability_mode: context.availabilityMode,
+        number_of_arrays: context.trialSet.arrays.length,
+        arrays: context.trialSet.arrays.map((arrayDef) => ({
+          label: arrayDef.label,
+          numerosity: arrayDef.numerosity,
+          setType: arrayDef.setType,
+          seed: arrayDef.seed
+        }))
+      });
+      return stimulusId;
+    }
+
+    registerProportionStimulus(trial, labels, format) {
+      const stimulusId = trial.stimulus_id || trial.trial_id || `proportion_${this.stimulusCatalog.proportion.length}`;
+      if (this.stimulusIndex.proportion.has(stimulusId)) {
+        return stimulusId;
+      }
+      this.stimulusIndex.proportion.add(stimulusId);
+      this.stimulusCatalog.proportion.push({
+        stimulus_id: stimulusId,
+        format,
+        number_of_boxes: labels.length,
+        target_label: trial.target_label || null,
+        random_seed: trial.random_seed || null,
+        label_values: buildLabelValueFields(labels, trial, true)
+      });
+      return stimulusId;
+    }
+
+    getPayload() {
+      const numerosityRows = [];
+      const proportionRows = [];
+      this.rows.forEach((row) => {
+        if (row.task_family === "proportion") {
+          proportionRows.push(row);
+        } else {
+          numerosityRows.push(row);
+        }
+      });
+      return {
+        metadata_sections: {
+          session: { ...this.metadataSections.session },
+          runtime: { ...this.metadataSections.runtime },
+          environment: { ...this.metadataSections.environment },
+          settings: this.metadataSections.settings
+        },
+        row_sections: {
+          numerosity: numerosityRows,
+          proportion: proportionRows
+        },
+        stimulus_sections: {
+          numerosity: this.stimulusCatalog.numerosity.slice(),
+          proportion: this.stimulusCatalog.proportion.slice()
+        }
+      };
     }
   }
 
@@ -2493,7 +2668,7 @@
         counterbalancingAssignment: this.counterbalancingAssignment,
         settingsUsed: this.config
       });
-      this.logger.metadata.qualtrics_overrides = {
+      this.logger.setRuntimeMetadata("qualtrics_overrides", {
         task: this.embeddedAssignments.task || this.queryParams.task || null,
         number_of_estimates_legacy: this.legacyRequestedEstimateCount,
         number_of_trials_separate_evaluation: this.requestedSeparateTrialCount,
@@ -2505,7 +2680,7 @@
         numerosity_range_max: this.requestedNumerosityRange.max,
         numerosity_range_safe_max: this.safeNumerosityMax,
         brief_display_ms: this.requestedBriefDisplayMs || this.config.timing.briefDisplayMs
-      };
+      });
       this.globalTrialIndex = 0;
       this.proportionTrialPool = this.proportionTrialFactory.buildTrialPool({
         boxCount: this.requestedProportionBoxCount,
@@ -2997,6 +3172,7 @@
     }
 
     async runSeparateNumerosityTrialSet(context) {
+      const stimulusId = this.logger.registerNumerosityStimulus(context);
       for (let subtrialIndex = 0; subtrialIndex < context.trialSet.arrays.length; subtrialIndex += 1) {
         const arrayDef = context.trialSet.arrays[subtrialIndex];
         const region = this.numerosityStimulusGenerator.createRegion(
@@ -3038,7 +3214,6 @@
           displayOffsetTime = responseInfo.responseTime;
           measuredDisplayDuration = displayOffsetTime - stimulusOnsetTime;
           this.logger.log({
-            ...getEnvironmentSnapshot(),
             task_family: "numerosity",
             trial_index: this.globalTrialIndex,
             block_index: context.blockIndex,
@@ -3046,22 +3221,15 @@
             practice: Boolean(context.block.practice),
             condition: context.condition,
             random_seed: arrayDef.seed,
-            trial_start_time: trialStartTime,
-            trial_end_time: nowIso(),
-            stimulus_onset_time: stimulusOnsetTime,
-            response_time: responseInfo.responseTime,
             reaction_time_ms: round(responseInfo.reactionTimeMs, 2),
             timeout: false,
             evaluation_mode: context.evaluationMode,
             availability_mode: context.availabilityMode,
             number_of_arrays: context.trialSet.arrays.length,
-            trialSetId: context.trialSet.trialSetId,
+            stimulus_id: stimulusId,
             array_label: arrayDef.label,
             numerosity_true_value: arrayDef.numerosity,
-            setType: arrayDef.setType,
-            seed: arrayDef.seed,
             response: responseInfo.response,
-            display_offset_time: displayOffsetTime,
             intended_display_duration: null,
             measured_display_duration: measuredDisplayDuration ? round(measuredDisplayDuration, 2) : null
           });
@@ -3083,7 +3251,6 @@
           measuredDisplayDuration = displayOffsetTime - stimulusOnsetTime;
         }
         this.logger.log({
-          ...getEnvironmentSnapshot(),
           task_family: "numerosity",
           trial_index: this.globalTrialIndex,
           block_index: context.blockIndex,
@@ -3091,22 +3258,15 @@
           practice: Boolean(context.block.practice),
           condition: context.condition,
           random_seed: arrayDef.seed,
-          trial_start_time: trialStartTime,
-          trial_end_time: nowIso(),
-          stimulus_onset_time: stimulusOnsetTime,
-          response_time: responseInfo.responseTime,
           reaction_time_ms: round(responseInfo.reactionTimeMs, 2),
           timeout: false,
           evaluation_mode: context.evaluationMode,
           availability_mode: context.availabilityMode,
           number_of_arrays: context.trialSet.arrays.length,
-          trialSetId: context.trialSet.trialSetId,
+          stimulus_id: stimulusId,
           array_label: arrayDef.label,
           numerosity_true_value: arrayDef.numerosity,
-          setType: arrayDef.setType,
-          seed: arrayDef.seed,
           response: responseInfo.response,
-          display_offset_time: displayOffsetTime,
           intended_display_duration: context.availabilityMode === "brief" ? this.config.timing.briefDisplayMs : null,
           measured_display_duration: measuredDisplayDuration ? round(measuredDisplayDuration, 2) : null
         });
@@ -3118,6 +3278,7 @@
     }
 
     async runJointNumerosityTrialSet(context) {
+      const stimulusId = this.logger.registerNumerosityStimulus(context);
       const stimuli = context.trialSet.arrays.map((arrayDef) => {
         const region = this.numerosityStimulusGenerator.createRegion(
           context.condition,
@@ -3160,7 +3321,6 @@
         measuredDisplayDuration = displayOffsetTime - stimulusOnsetTime;
         context.trialSet.arrays.forEach((arrayDef) => {
           this.logger.log({
-            ...getEnvironmentSnapshot(),
             task_family: "numerosity",
             trial_index: this.globalTrialIndex,
             block_index: context.blockIndex,
@@ -3168,22 +3328,15 @@
             practice: Boolean(context.block.practice),
             condition: context.condition,
             random_seed: arrayDef.seed,
-            trial_start_time: trialStartTime,
-            trial_end_time: nowIso(),
-            stimulus_onset_time: stimulusOnsetTime,
-            response_time: responseInfo.responseTime,
             reaction_time_ms: round(responseInfo.reactionTimeMs, 2),
             timeout: false,
             evaluation_mode: context.evaluationMode,
             availability_mode: context.availabilityMode,
             number_of_arrays: context.trialSet.arrays.length,
-            trialSetId: context.trialSet.trialSetId,
+            stimulus_id: stimulusId,
             array_label: arrayDef.label,
             numerosity_true_value: arrayDef.numerosity,
-            setType: arrayDef.setType,
-            seed: arrayDef.seed,
             response: responseInfo.responses[arrayDef.label],
-            display_offset_time: displayOffsetTime,
             intended_display_duration: null,
             measured_display_duration: measuredDisplayDuration ? round(measuredDisplayDuration, 2) : null
           });
@@ -3207,7 +3360,6 @@
       }
       context.trialSet.arrays.forEach((arrayDef) => {
         this.logger.log({
-          ...getEnvironmentSnapshot(),
           task_family: "numerosity",
           trial_index: this.globalTrialIndex,
           block_index: context.blockIndex,
@@ -3215,22 +3367,15 @@
           practice: Boolean(context.block.practice),
           condition: context.condition,
           random_seed: arrayDef.seed,
-          trial_start_time: trialStartTime,
-          trial_end_time: nowIso(),
-          stimulus_onset_time: stimulusOnsetTime,
-          response_time: responseInfo.responseTime,
           reaction_time_ms: round(responseInfo.reactionTimeMs, 2),
           timeout: false,
           evaluation_mode: context.evaluationMode,
           availability_mode: context.availabilityMode,
           number_of_arrays: context.trialSet.arrays.length,
-          trialSetId: context.trialSet.trialSetId,
+          stimulus_id: stimulusId,
           array_label: arrayDef.label,
           numerosity_true_value: arrayDef.numerosity,
-          setType: arrayDef.setType,
-          seed: arrayDef.seed,
           response: responseInfo.responses[arrayDef.label],
-          display_offset_time: displayOffsetTime,
           intended_display_duration: context.availabilityMode === "brief" ? this.config.timing.briefDisplayMs : null,
           measured_display_duration: measuredDisplayDuration ? round(measuredDisplayDuration, 2) : null
         });
@@ -3271,7 +3416,7 @@
         trial,
         format === "joint" ? this.requestedProportionBoxCount : DEFAULT_PROPORTION_BOX_COUNT
       );
-      const labelValueFields = buildLabelValueFields(labels, trial, true);
+      const stimulusId = this.logger.registerProportionStimulus(trial, labels, format);
       if (this.config.timing.fixationEnabled && this.config.timing.fixationMs > 0) {
         await this.screenManager.showMessage(FIXATION_SYMBOL, this.config.timing.fixationMs, "fixation");
       }
@@ -3296,18 +3441,14 @@
         labels.forEach((label) => {
           const targetValue = Number(trial[label]);
           this.logger.log({
-            ...getEnvironmentSnapshot(),
             task_family: "proportion",
             trial_index: this.globalTrialIndex,
             block_index: blockIndex,
             block_name: block.name,
             practice: Boolean(block.practice),
             condition: block.condition || format,
-            random_seed: trial.random_seed || null,
             trial_start_time: startTime,
             trial_end_time: nowIso(),
-            stimulus_onset_time: stimulusOnset,
-            response_time: responseInfo.responseTime,
             reaction_time_ms: round(responseInfo.reactionTimeMs, 2),
             timeout: false,
             format,
@@ -3315,14 +3456,13 @@
             number_of_boxes: labels.length,
             proportion_joint_label_order: this.proportionJointOrderMode,
             target_label: label,
-            ...labelValueFields,
             target_true_proportion: targetValue,
             displayed_target_value: round(targetValue * 100, 2),
             response: responseInfo.responses[label],
             response_normalized: round(responseInfo.responses[label] / 100, 4),
             response_method: "numeric_open",
             accuracy: null,
-            stimulus_id: trial.stimulus_id || trial.trial_id || null,
+            stimulus_id: stimulusId,
             joint_total_response:
               this.config.taskSettings.proportion.showJointTotalBox !== false ? responseInfo.total : null
           });
@@ -3332,18 +3472,14 @@
         const responseInfo = await this.responseManager.collectPercentageResponseEmbedded(view.stage, "");
         const targetValue = Number(trial[trial.target_label]);
         this.logger.log({
-          ...getEnvironmentSnapshot(),
           task_family: "proportion",
           trial_index: this.globalTrialIndex,
           block_index: blockIndex,
           block_name: block.name,
           practice: Boolean(block.practice),
           condition: block.condition || format,
-          random_seed: trial.random_seed || null,
           trial_start_time: startTime,
           trial_end_time: nowIso(),
-          stimulus_onset_time: stimulusOnset,
-          response_time: responseInfo.responseTime,
           reaction_time_ms: round(responseInfo.reactionTimeMs, 2),
           timeout: false,
           format,
@@ -3351,14 +3487,13 @@
           number_of_boxes: labels.length,
           proportion_joint_label_order: this.proportionJointOrderMode,
           target_label: trial.target_label,
-          ...labelValueFields,
           target_true_proportion: targetValue,
           displayed_target_value: round(targetValue * 100, 2),
           response: responseInfo.response,
           response_normalized: responseInfo.responseNormalized,
           response_method: "numeric_open",
           accuracy: null,
-          stimulus_id: trial.stimulus_id || trial.trial_id || null
+          stimulus_id: stimulusId
         });
         this.globalTrialIndex += 1;
       }
@@ -3368,11 +3503,13 @@
     }
 
     finish() {
-      const rows = this.logger.getRows();
-      const metadata = this.logger.getMetadata();
+      const payload = this.logger.getPayload();
+      const numerosityRows = payload.row_sections.numerosity;
+      const proportionRows = payload.row_sections.proportion;
+      const rows = [...numerosityRows, ...proportionRows];
       const runningInQualtrics = this.config.qualtrics.enabled && this.qualtricsAdapter.isAvailable();
       if (this.config.qualtrics.enabled) {
-        this.qualtricsAdapter.writeResults(rows, metadata);
+        this.qualtricsAdapter.writeResults(payload);
       }
       const doDownload = () => {
         const prefix = `${this.config.export.filePrefix}_${this.participantId || this.sessionId}`;
@@ -3382,7 +3519,7 @@
         if (this.config.export.downloadJson) {
           downloadFile(
             `${prefix}.json`,
-            JSON.stringify({ metadata, rows }, null, 2),
+            JSON.stringify(payload, null, 2),
             "application/json;charset=utf-8"
           );
         }

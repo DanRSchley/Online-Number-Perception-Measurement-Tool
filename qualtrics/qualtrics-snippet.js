@@ -12,8 +12,18 @@
    - number_of_boxes
    - numerosity_range
    - brief_display_ms
-   - experiment_data_json
-   - experiment_metadata_json
+   - experiment_metadata_session_json
+   - experiment_metadata_runtime_json
+   - experiment_metadata_environment_json
+   - experiment_metadata_settings_json
+   - experiment_response_rows_numerosity_json_count
+   - experiment_response_rows_numerosity_json_1
+   - experiment_response_rows_proportion_json_count
+   - experiment_response_rows_proportion_json_1
+   - experiment_stimuli_numerosity_json_count
+   - experiment_stimuli_numerosity_json_1
+   - experiment_stimuli_proportion_json_count
+   - experiment_stimuli_proportion_json_1
    - experiment_complete
 */
 
@@ -88,11 +98,10 @@ Qualtrics.SurveyEngine.addOnload(function () {
 
   function handleComplete(event) {
     if (!event || !event.detail) return;
-    Qualtrics.SurveyEngine.setEmbeddedData("experiment_data_json", JSON.stringify(event.detail.rows));
-    Qualtrics.SurveyEngine.setEmbeddedData("experiment_metadata_json", JSON.stringify(event.detail.metadata));
-    Qualtrics.SurveyEngine.setEmbeddedData("experiment_complete", "1");
-    q.showNextButton();
     window.removeEventListener("behavioral-experiment:complete", handleComplete);
+    setTimeout(function () {
+      q.clickNextButton();
+    }, 100);
   }
 
   function startExperiment() {

@@ -1,0 +1,2 @@
+{"run_id": 1, "task": "numerosity_separate_brief", "status": "completed", "started_at": "2026-04-22T13:58:21.948609+00:00", "finished_at": "2026-04-22T13:59:12.934998+00:00"}
+{"run_id": 2, "task": "proportion_joint_evaluation_constsum", "status": "completed", "started_at": "2026-04-22T13:59:14.215152+00:00", "finished_at": "2026-04-22T13:59:22.889063+00:00"}
