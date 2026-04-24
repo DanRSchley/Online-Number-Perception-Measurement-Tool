@@ -1,0 +1,8 @@
+{"run_id": 1, "task": "numerosity_joint_visible", "status": "completed", "started_at": "2026-04-24T07:49:19.247019+00:00", "finished_at": "2026-04-24T07:49:48.613002+00:00"}
+{"run_id": 2, "task": "numerosity_separate_brief", "status": "completed", "started_at": "2026-04-24T07:49:51.143533+00:00", "finished_at": "2026-04-24T07:50:44.111703+00:00"}
+{"run_id": 3, "task": "numerosity_joint_brief", "status": "completed", "started_at": "2026-04-24T07:50:45.295304+00:00", "finished_at": "2026-04-24T07:51:17.064932+00:00"}
+{"run_id": 4, "task": "numerosity_joint_brief", "status": "completed", "started_at": "2026-04-24T07:51:18.200485+00:00", "finished_at": "2026-04-24T07:51:48.399219+00:00"}
+{"run_id": 5, "task": "proportion_joint_evaluation_constsum", "status": "completed", "started_at": "2026-04-24T07:51:49.888582+00:00", "finished_at": "2026-04-24T07:51:59.465055+00:00"}
+{"run_id": 6, "task": "numerosity_separate_visible", "status": "completed", "started_at": "2026-04-24T07:52:00.661320+00:00", "finished_at": "2026-04-24T07:52:39.182054+00:00"}
+{"run_id": 7, "task": "proportion_joint_evaluation_constsum", "status": "completed", "started_at": "2026-04-24T07:52:40.418108+00:00", "finished_at": "2026-04-24T07:52:49.957829+00:00"}
+{"run_id": 8, "task": "proportion_separate_evaluation", "status": "completed", "started_at": "2026-04-24T07:52:51.208561+00:00", "finished_at": "2026-04-24T07:53:05.135525+00:00"}

@@ -1,0 +1,10 @@
+{"run_id": 1, "task": "proportion_joint_evaluation_constsum", "status": "completed", "started_at": "2026-04-23T08:12:14.622598+00:00", "finished_at": "2026-04-23T08:12:24.678198+00:00"}
+{"run_id": 2, "task": "numerosity_separate_brief", "status": "completed", "started_at": "2026-04-23T08:12:26.509318+00:00", "finished_at": "2026-04-23T08:13:18.979599+00:00"}
+{"run_id": 3, "task": "proportion_separate_evaluation", "status": "completed", "started_at": "2026-04-23T08:13:20.144787+00:00", "finished_at": "2026-04-23T08:13:33.390593+00:00"}
+{"run_id": 4, "task": "proportion_separate_evaluation", "status": "completed", "started_at": "2026-04-23T08:13:34.578550+00:00", "finished_at": "2026-04-23T08:13:47.960274+00:00"}
+{"run_id": 5, "task": "proportion_joint_evaluation_constsum", "status": "completed", "started_at": "2026-04-23T08:13:49.095267+00:00", "finished_at": "2026-04-23T08:13:59.256453+00:00"}
+{"run_id": 6, "task": "proportion_joint_evaluation_constsum", "status": "completed", "started_at": "2026-04-23T08:14:00.454541+00:00", "finished_at": "2026-04-23T08:14:09.844633+00:00"}
+{"run_id": 7, "task": "proportion_joint_evaluation_constsum", "status": "completed", "started_at": "2026-04-23T08:14:11.066666+00:00", "finished_at": "2026-04-23T08:14:20.494698+00:00"}
+{"run_id": 8, "task": "proportion_joint_evaluation_constsum", "status": "completed", "started_at": "2026-04-23T08:14:21.693211+00:00", "finished_at": "2026-04-23T08:14:31.068222+00:00"}
+{"run_id": 9, "task": "numerosity_joint_brief", "status": "completed", "started_at": "2026-04-23T08:14:32.236615+00:00", "finished_at": "2026-04-23T08:15:02.566668+00:00"}
+{"run_id": 10, "task": "numerosity_joint_brief", "status": "completed", "started_at": "2026-04-23T08:15:03.765750+00:00", "finished_at": "2026-04-23T08:15:33.526260+00:00"}

@@ -160,54 +160,201 @@ Every task block begins with one practice round.
 
 ## Data Logging
 
-### Qualtrics output fields
+### Embedded Data field map
 
-Create these Embedded Data fields in Survey Flow:
+The app uses two categories of Embedded Data fields in Qualtrics:
 
-- `experiment_data_json`
-- `experiment_metadata_json`
+- researcher-set runtime controls
+- app-written output fields
+
+#### Researcher-set runtime controls
+
+These are set in Survey Flow before the task question appears.
+
+- `task`
+  - task key to run for this participant
+  - examples:
+    - `numerosity_separate_brief`
+    - `numerosity_joint_visible`
+    - `proportion_joint_evaluation`
+- `participant_id`
+  - optional external participant identifier
+  - if omitted, the app falls back to the Qualtrics response/session identifier
+- `counterbalance_assignment`
+  - participant-level counterbalancing flag
+  - used most importantly for joint proportion label ordering
+  - current app logic treats values other than the legacy `odd` large-first rule as the `A = smallest` style mapping unless explicitly customized
+- `number_of_trials_joint_evaluation`
+  - exact number of scored joint-task screens
+  - applies to:
+    - `numerosity_joint_brief`
+    - `numerosity_joint_visible`
+    - `proportion_joint_evaluation`
+    - `proportion_joint_evaluation_constsum`
+- `number_of_trials_separate_evaluation`
+  - exact number of scored separate-task screens
+  - applies to:
+    - `numerosity_only`
+    - `numerosity_separate_brief`
+    - `numerosity_separate_visible`
+    - `proportion_only`
+    - `proportion_separate_evaluation`
+- `number_of_arrays`
+  - number of groups shown on joint numerosity screens
+  - supported values: `2`, `4`, `6`
+- `number_of_boxes`
+  - number of colored sections shown on joint proportion screens
+  - supported values: `2` through `10`
+- `numerosity_range`
+  - requested numerosity range as a string
+  - typical format: `20-80`
+  - the app may impose a lower safe maximum depending on layout density
+- `brief_display_ms`
+  - display duration in milliseconds for brief numerosity tasks
+
+#### App-written metadata fields
+
+These are written automatically by the app. Create them in Survey Flow, but do not manually assign values.
+
+- `experiment_metadata_session_json`
+  - session-level identifiers and persistent assignment information
+  - currently includes:
+    - experiment version
+    - date/time
+    - participant id
+    - session id
+    - counterbalancing assignment
+- `experiment_metadata_runtime_json`
+  - runtime override information actually used by the app
+  - currently includes fields such as:
+    - requested task
+    - requested joint trial count
+    - requested separate trial count
+    - legacy estimate count if a legacy alias was supplied
+    - requested array count
+    - requested box count
+    - requested numerosity range min/max
+    - safe numerosity max for the chosen layout
+    - brief display duration
+- `experiment_metadata_environment_json`
+  - browser and display environment information
+  - currently includes:
+    - browser info string
+    - screen width and height
+    - viewport width and height
+    - full-screen status
+- `experiment_metadata_settings_json`
+  - full resolved task settings/config object used for the run
+
+#### App-written chunk count fields
+
+These fields tell you how many chunks were needed for each large JSON family.
+
+- `experiment_response_rows_numerosity_json_count`
+  - number of chunk fields used for numerosity response rows
+- `experiment_response_rows_proportion_json_count`
+  - number of chunk fields used for proportion response rows
+- `experiment_stimuli_numerosity_json_count`
+  - number of chunk fields used for numerosity stimulus definitions
+- `experiment_stimuli_proportion_json_count`
+  - number of chunk fields used for proportion stimulus definitions
+
+#### App-written chunked payload fields
+
+These hold the actual large JSON payloads. Predeclare several chunk slots in Survey Flow.
+
+- `experiment_response_rows_numerosity_json_1`, `_2`, `_3`, ...
+  - row-level response logs for numerosity tasks
+- `experiment_response_rows_proportion_json_1`, `_2`, `_3`, ...
+  - row-level response logs for proportion tasks
+- `experiment_stimuli_numerosity_json_1`, `_2`, `_3`, ...
+  - stimulus catalog for numerosity screens
+  - this stores the shared stimulus definitions once instead of repeating them in every row
+- `experiment_stimuli_proportion_json_1`, `_2`, `_3`, ...
+  - stimulus catalog for proportion screens
+  - this stores bar label values and related stimulus descriptors once instead of repeating them in every row
+
+#### Completion flag
+
 - `experiment_complete`
+  - written as `1` when the embedded app reaches its completion event
 
-Do not manually set those output fields. The task writes them automatically.
+### What the row sections contain
 
-### Metadata currently recorded
+The row logs are intentionally slimmer than earlier versions of the app.
 
-The app records runtime metadata including:
-
-- requested joint trial count
-- requested separate trial count
-- legacy estimate count when a legacy field is used
-- requested number of arrays
-- requested number of boxes
-- numerosity range minimum and maximum
-- safe numerosity maximum for the current layout
-- brief display duration
-- joint proportion label-order mapping
-
-### Important row-level fields
-
-Numerosity rows include fields such as:
+Numerosity response rows include fields such as:
 
 - `task_family`
+- `trial_index`
+- `block_index`
+- `block_name`
+- `practice`
+- `condition`
+- `random_seed`
+- `reaction_time_ms`
+- `timeout`
 - `evaluation_mode`
 - `availability_mode`
 - `number_of_arrays`
+- `stimulus_id`
 - `array_label`
 - `numerosity_true_value`
 - `response`
-- `practice`
+- `intended_display_duration`
+- `measured_display_duration`
 
-Proportion rows include fields such as:
+Proportion response rows include fields such as:
 
 - `task_family`
+- `trial_index`
+- `block_index`
+- `block_name`
+- `practice`
+- `condition`
+- `trial_start_time`
+- `trial_end_time`
+- `reaction_time_ms`
+- `timeout`
 - `format`
+- `judgment_type`
 - `number_of_boxes`
 - `proportion_joint_label_order`
 - `target_label`
 - `target_true_proportion`
+- `displayed_target_value`
 - `response`
-- `joint_total_response`
-- `practice`
+- `response_normalized`
+- `response_method`
+- `accuracy`
+- `stimulus_id`
+- `joint_total_response` for constant-sum joint tasks
+
+### What the stimulus sections contain
+
+Numerosity stimulus entries include:
+
+- `stimulus_id`
+- `condition`
+- `evaluation_mode`
+- `availability_mode`
+- `number_of_arrays`
+- `arrays`
+  - one entry per displayed group with:
+    - `label`
+    - `numerosity`
+    - `setType`
+    - `seed`
+
+Proportion stimulus entries include:
+
+- `stimulus_id`
+- `format`
+- `number_of_boxes`
+- `target_label`
+- `random_seed`
+- `label_values`
+  - the displayed percentage/proportion values for the labels shown on that bar
 
 ## Qualtrics Setup
 
@@ -234,6 +381,25 @@ Proportion rows include fields such as:
   - `brief_display_ms` for brief versions
 - joint proportion tasks:
   - `number_of_boxes`
+
+7. Also create the app-written output fields:
+
+- `experiment_metadata_session_json`
+- `experiment_metadata_runtime_json`
+- `experiment_metadata_environment_json`
+- `experiment_metadata_settings_json`
+- `experiment_response_rows_numerosity_json_count`
+- `experiment_response_rows_proportion_json_count`
+- `experiment_stimuli_numerosity_json_count`
+- `experiment_stimuli_proportion_json_count`
+- `experiment_complete`
+
+8. Predeclare chunk slots for the large JSON families. A safe starting set is:
+
+- `experiment_response_rows_numerosity_json_1` through `_6`
+- `experiment_response_rows_proportion_json_1` through `_6`
+- `experiment_stimuli_numerosity_json_1` through `_3`
+- `experiment_stimuli_proportion_json_1` through `_3`
 
 ### Task-specific notes
 

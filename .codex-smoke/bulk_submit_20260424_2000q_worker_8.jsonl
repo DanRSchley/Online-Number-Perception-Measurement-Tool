@@ -1,0 +1,4 @@
+{"run_id": 1, "task": "numerosity_separate_brief", "status": "completed", "started_at": "2026-04-24T07:49:19.477934+00:00", "finished_at": "2026-04-24T07:50:15.819300+00:00"}
+{"run_id": 2, "task": "numerosity_joint_brief", "status": "completed", "started_at": "2026-04-24T07:50:17.162138+00:00", "finished_at": "2026-04-24T07:50:48.918940+00:00"}
+{"run_id": 3, "task": "numerosity_joint_visible", "status": "completed", "started_at": "2026-04-24T07:50:50.163296+00:00", "finished_at": "2026-04-24T07:51:14.246549+00:00"}
+{"run_id": 4, "task": "proportion_separate_evaluation", "status": "completed", "started_at": "2026-04-24T07:51:15.425548+00:00", "finished_at": "2026-04-24T07:51:28.767333+00:00"}

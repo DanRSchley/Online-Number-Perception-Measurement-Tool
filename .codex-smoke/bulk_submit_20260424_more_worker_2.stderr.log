@@ -1,0 +1,49 @@
+Traceback (most recent call last):
+  File "C:\Users\Schley\Erasmus Universiteit Rotterdam Dropbox\Dan Schley\Non-shared Research files\Ongoing\JustDan\ProportionCalibration\Online Tool\.codex-smoke\qualtrics_bulk_submit.py", line 386, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\Schley\Erasmus Universiteit Rotterdam Dropbox\Dan Schley\Non-shared Research files\Ongoing\JustDan\ProportionCalibration\Online Tool\.codex-smoke\qualtrics_bulk_submit.py", line 378, in main
+    result = run_once(driver, run_id, rng)
+  File "C:\Users\Schley\Erasmus Universiteit Rotterdam Dropbox\Dan Schley\Non-shared Research files\Ongoing\JustDan\ProportionCalibration\Online Tool\.codex-smoke\qualtrics_bulk_submit.py", line 260, in run_once
+    click_next_if_present(driver)
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "C:\Users\Schley\Erasmus Universiteit Rotterdam Dropbox\Dan Schley\Non-shared Research files\Ongoing\JustDan\ProportionCalibration\Online Tool\.codex-smoke\qualtrics_bulk_submit.py", line 79, in click_next_if_present
+    if button.is_enabled():
+       ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Schley\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webelement.py", line 258, in is_enabled
+    return self._execute(Command.IS_ELEMENT_ENABLED)["value"]
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Schley\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webelement.py", line 573, in _execute
+    return self._parent.execute(command, params)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Schley\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webdriver.py", line 454, in execute
+    self.error_handler.check_response(response)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\Schley\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\errorhandler.py", line 232, in check_response
+    raise exception_class(message, screen, stacktrace)
+selenium.common.exceptions.StaleElementReferenceException: Message: stale element reference: stale element not found in the current frame
+  (Session info: chrome=147.0.7727.101); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#staleelementreferenceexception
+Stacktrace:
+	chromedriver!GetHandleVerifier [0x7ff7b3270245+146d5]
+	chromedriver!GetHandleVerifier [0x7ff7b32702b0+14740]
+	chromedriver!(No symbol) [0x7ff7b2fdd7cd]
+	chromedriver!(No symbol) [0x7ff7b2fe5751]
+	chromedriver!(No symbol) [0x7ff7b2fe8875]
+	chromedriver!(No symbol) [0x7ff7b2fe893f]
+	chromedriver!(No symbol) [0x7ff7b303265b]
+	chromedriver!(No symbol) [0x7ff7b305ff6a]
+	chromedriver!(No symbol) [0x7ff7b302a986]
+	chromedriver!(No symbol) [0x7ff7b3084818]
+	chromedriver!(No symbol) [0x7ff7b3029018]
+	chromedriver!(No symbol) [0x7ff7b3029f03]
+	chromedriver!GetHandleVerifier [0x7ff7b35858f9+329d89]
+	chromedriver!GetHandleVerifier [0x7ff7b357fe46+3242d6]
+	chromedriver!GetHandleVerifier [0x7ff7b35a30b2+347542]
+	chromedriver!GetHandleVerifier [0x7ff7b328d3d5+31865]
+	chromedriver!GetHandleVerifier [0x7ff7b329600c+3a49c]
+	chromedriver!GetHandleVerifier [0x7ff7b3279634+1dac4]
+	chromedriver!GetHandleVerifier [0x7ff7b32797e6+1dc76]
+	chromedriver!GetHandleVerifier [0x7ff7b325e2f7+2787]
+	KERNEL32!BaseThreadInitThunk [0x7ffa11b17374+14]
+	ntdll!RtlUserThreadStart [0x7ffa12ffcc91+21]
+

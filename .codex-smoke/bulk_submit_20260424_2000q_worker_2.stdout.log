@@ -1,0 +1,13 @@
+{"run_id": 1, "task": "proportion_separate_evaluation", "status": "completed", "started_at": "2026-04-24T07:49:19.531247+00:00", "finished_at": "2026-04-24T07:49:40.530220+00:00"}
+{"run_id": 2, "task": "proportion_joint_evaluation_constsum", "status": "completed", "started_at": "2026-04-24T07:49:41.855858+00:00", "finished_at": "2026-04-24T07:49:52.875057+00:00"}
+{"run_id": 3, "task": "numerosity_joint_visible", "status": "completed", "started_at": "2026-04-24T07:49:54.086110+00:00", "finished_at": "2026-04-24T07:50:18.352074+00:00"}
+{"run_id": 4, "task": "numerosity_separate_visible", "status": "completed", "started_at": "2026-04-24T07:50:19.630530+00:00", "finished_at": "2026-04-24T07:51:00.284328+00:00"}
+{"run_id": 5, "task": "numerosity_joint_visible", "status": "completed", "started_at": "2026-04-24T07:51:01.473551+00:00", "finished_at": "2026-04-24T07:51:24.695546+00:00"}
+{"run_id": 6, "task": "proportion_separate_evaluation", "status": "completed", "started_at": "2026-04-24T07:51:25.938172+00:00", "finished_at": "2026-04-24T07:51:40.522595+00:00"}
+{"run_id": 7, "task": "proportion_joint_evaluation_constsum", "status": "completed", "started_at": "2026-04-24T07:51:41.678402+00:00", "finished_at": "2026-04-24T07:51:52.226927+00:00"}
+{"run_id": 8, "task": "numerosity_joint_brief", "status": "completed", "started_at": "2026-04-24T07:51:53.376740+00:00", "finished_at": "2026-04-24T07:52:23.858332+00:00"}
+{"run_id": 9, "task": "proportion_joint_evaluation_constsum", "status": "completed", "started_at": "2026-04-24T07:52:25.026122+00:00", "finished_at": "2026-04-24T07:52:34.596823+00:00"}
+{"run_id": 10, "task": "numerosity_joint_visible", "status": "completed", "started_at": "2026-04-24T07:52:35.823840+00:00", "finished_at": "2026-04-24T07:52:58.948559+00:00"}
+{"run_id": 11, "task": "proportion_separate_evaluation", "status": "completed", "started_at": "2026-04-24T07:53:00.118545+00:00", "finished_at": "2026-04-24T07:53:14.428018+00:00"}
+{"run_id": 12, "task": "numerosity_separate_brief", "status": "completed", "started_at": "2026-04-24T07:53:15.586282+00:00", "finished_at": "2026-04-24T07:54:07.065936+00:00"}
+{"run_id": 13, "task": "numerosity_joint_brief", "status": "completed", "started_at": "2026-04-24T07:54:08.220794+00:00", "finished_at": "2026-04-24T07:54:37.957867+00:00"}
